@@ -14,7 +14,7 @@ import trochee.basic.{SpireOpsExp, GenSpireOps}
  * 
  * @author dlwh
  */
-abstract class ParserKernels extends InsideKernels with KernelOps with RangeOps { this: Base with KernelOps with RangeOps =>
+abstract class ParserKernels extends InsideKernels with KernelOps with RangeOps { this: Base =>
 
 
 }
@@ -24,13 +24,13 @@ object NullGrammar extends ParserKernels with InliningInsideKernels with ParserC
     val IR: self.type = self
   }
   println(codegen.mkKernel(insideUnaries))
-  protected def doLeftTermUpdates(out: Rep[Array[Real]], grammar: Rep[Int], leftTerm: Rep[TermCell], right: Rep[ParseCell], rules: Rep[Array[RuleCell]]): Rep[Unit] = unit()
+  protected def doLeftTermUpdates(out: Rep[Array[Real]], grammar: Rep[Int], leftTerm: Rep[TermCell], right: Rep[ParseCell], rules: Rep[RuleCell]): Rep[Unit] = unit()
 
-  protected def doBothTermUpdates(out: Rep[Array[Real]], grammar: Rep[Int], leftTerm: Rep[TermCell], rightTerm: Rep[TermCell], rules: Rep[Array[RuleCell]]): Rep[Unit] = unit()
+  protected def doBothTermUpdates(out: Rep[Array[Real]], grammar: Rep[Int], leftTerm: Rep[TermCell], rightTerm: Rep[TermCell], rules: Rep[RuleCell]): Rep[Unit] = unit()
 
-  protected def doRightTermUpdates(out: Rep[Array[Real]], grammar: Rep[Int], left: Rep[ParseCell], rightTerm: Rep[TermCell], rules: Rep[Array[RuleCell]]): Rep[Unit] = unit()
+  protected def doRightTermUpdates(out: Rep[Array[Real]], grammar: Rep[Int], left: Rep[ParseCell], rightTerm: Rep[TermCell], rules: Rep[RuleCell]): Rep[Unit] = unit()
 
-  protected def doNTRuleUpdates(out: Rep[Array[Real]], left: Rep[ParseCell], right: Rep[ParseCell], grammar: Rep[Int], rulePartition: IndexedSeq[(Rule[Int], Int)], rules: Rep[Array[RuleCell]]): Rep[Unit] = unit()
+  protected def doNTRuleUpdates(out: Rep[Array[Real]], left: Rep[ParseCell], right: Rep[ParseCell], grammar: Rep[Int], rulePartition: IndexedSeq[(Rule[Int], Int)], rules: Rep[RuleCell]): Rep[Unit] = unit()
 
   def writeOut(out: Rep[ParseCell], in: Rep[Array[Real]]): Rep[Unit] = unit()
 
@@ -41,23 +41,7 @@ object NullGrammar extends ParserKernels with InliningInsideKernels with ParserC
   def rigRepReal: Numeric[NullGrammar.Real] = implicitly
 
 
-  def grammar: Grammar {type Real = self.Real} = new Grammar {
-    type Real = self.Real
-
-    def numSyms: Int = 5
-
-    def ruleScores: Array[Real] = Array(1.0f,2.0f,3.0f)
-
-    def leftTermRules: IndexedSeq[(BinaryRule[Int], Int)] = ???
-
-    def rightTermRules: IndexedSeq[(BinaryRule[Int], Int)] = ???
-
-    def nontermRules: IndexedSeq[(BinaryRule[Int], Int)] = ???
-
-    def bothTermRules: IndexedSeq[(BinaryRule[Int], Int)] = ???
-
-    def unaryRules: IndexedSeq[(UnaryRule[Int], Int)] = Array(UnaryRule(0,0) -> 0, UnaryRule(0,1) -> 1, UnaryRule(1,0) -> 2)
-  }
+  val grammar = Grammar.parseFile(new java.io.File("src/main/resources/trochee/parser/demo.grammar.txt"))
 }
 
 trait OpenCLParserGen extends OpenCLKernelCodegen with GenSpireOps {
@@ -65,10 +49,17 @@ trait OpenCLParserGen extends OpenCLKernelCodegen with GenSpireOps {
   import IR._
   lazy val typeMaps = Map[Class[_],String](manifestParseCell.erasure -> "parse_cell" ,
     manifestTermCell.erasure -> "term_cell",
-    manifestRuleCell.erasure -> "rule_cell")
+    manifestRuleCell.erasure -> "rule_cell*")
   override def remap[A](m: Manifest[A]) : String = {
     typeMaps.getOrElse(m.erasure, super.remap(m))
   }
 
+  override def emitNode(sym: Sym[Any], rhs: Def[Any]) {
+    rhs match {
+      case Mad(a,b,c) =>
+        cacheAndEmit(sym, s"mad(${quote(a)}, ${quote(b)}, ${quote(c)})")
+      case _ => super.emitNode(sym, rhs)
+    }
 
+  }
 }

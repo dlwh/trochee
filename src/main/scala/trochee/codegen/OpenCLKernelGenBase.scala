@@ -3,7 +3,6 @@ package trochee.codegen
 import virtualization.lms.internal._
 import trochee.kernels.{KernelOpsExp, KernelOps}
 import trochee.util.{NiceNamesGen, CStructExp}
-import reflect.SourceContext
 
 /**
  * This code generator differs from the one in LMS in that it *only* generates kernels.
@@ -15,6 +14,7 @@ trait OpenCLKernelGenBase extends GenericFatCodegen with NiceNamesGen {
 
   override def quote(x: Exp[Any]): String = x match {
     case FieldDeref(sym, field) => preferNoLocal(sym)+"." +field
+    case FieldPointerDeref(sym, field) => preferNoLocal(sym)+"->" +field
     case _ => super.quote(x)
 
   }

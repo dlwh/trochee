@@ -20,6 +20,7 @@ trait ParserCommon extends ExtraBase with SpireOps { self: Base with KernelOps w
   implicit def manifestReal: Manifest[Real]
   implicit def rigRepReal: Numeric[Real]
   def zero: Rep[Real] = unit[Real](implicitly[Numeric[Real]].zero)
+  def mad(a: Rep[Real], b: Rep[Real], c: Rep[Real]):Rep[Real]
 
   /*
   typedef struct {
@@ -36,6 +37,7 @@ trait ParserCommon extends ExtraBase with SpireOps { self: Base with KernelOps w
   type TermCell
   implicit def manifestTermCell: Manifest[TermCell]
   def infix_syms(cell: Rep[TermCell]):Rep[Array[Array[Real]]]
+  def infix_syms(cell: Rep[TermCell], i: Rep[Int]):Rep[Array[Real]] = infix_syms(cell) apply (i)
 
   type RuleCell
   implicit def manifestRuleCell: Manifest[RuleCell]
@@ -47,7 +49,7 @@ trait ParserCommon extends ExtraBase with SpireOps { self: Base with KernelOps w
     arr(offset + triangularIndex)
   }
 
-  def grammar: Grammar { type Real = self.Real }
+  def grammar: Grammar[String, Real]
 
   def numSyms: Int = grammar.numSyms
 }
@@ -67,9 +69,13 @@ trait ParserCommonExp extends ParserCommon with BaseFatExp with CStructExp { sel
 
   def manifestRuleCell: Manifest[RuleCell] = implicitly
 
-  def infix_rules(cell: Rep[RuleCell]): Rep[Array[Array[Real]]] = FieldDeref[RuleCell, Array[Array[Real]]](cell, "rules")
+  def infix_rules(cell: Rep[RuleCell]): Rep[Array[Array[Real]]] = FieldPointerDeref[RuleCell, Array[Array[Real]]](cell, "rules")
 
 
 
   def arrays_fill[T: Manifest](x: Rep[Array[T]], n: Rep[T])(implicit pos: SourceContext): Rep[Unit] = ???
+
+  case class Mad(a: Rep[Real], b: Rep[Real], c: Rep[Real]) extends Def[Real]
+
+  def mad(a: Rep[Real], b: Rep[Real], c: Rep[Real]): Rep[Real] = Mad(a,b,c)
 }

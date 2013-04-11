@@ -20,7 +20,7 @@ trait InsideKernels extends ParserCommon { self: Base with KernelOps with RangeO
                                                               lengths: Rep[Array[Int] with Global],
                                                               lengthOffsets: Rep[Array[Int] with Global],
                                                               spanLength: Rep[Int],
-                                                              rules: Rep[Array[RuleCell] with Global]) =>
+                                                              rules: Rep[RuleCell with Global]) =>
     val sentence = globalId(0)
     val begin = globalId(1)
     val gram = globalId(2)
@@ -40,7 +40,9 @@ trait InsideKernels extends ParserCommon { self: Base with KernelOps with RangeO
 
       doLeftTermUpdates(out, gram,  leftTerm, right, rules)
       doRightTermUpdates(out, gram, left, rightTerm, rules)
-      doBothTermUpdates(out, gram, leftTerm, rightTerm, rules)
+      if(spanLength == 2)
+        doBothTermUpdates(out, gram, leftTerm, rightTerm, rules)
+      else unit()
       writeOut(CELL(insideBots, sentOffset, begin, end), out)
 
     } else unit() // needed because scala is silly
@@ -51,27 +53,27 @@ trait InsideKernels extends ParserCommon { self: Base with KernelOps with RangeO
                                   grammar: Rep[Int],
                                   leftTerm: Rep[TermCell],
                                   right: Rep[ParseCell],
-                                  rules: Rep[Array[RuleCell]]):Rep[Unit]
+                                  rules: Rep[RuleCell]):Rep[Unit]
 
 
   protected def doBothTermUpdates(out: Rep[Array[Real]],
                                   grammar: Rep[Int],
                                   leftTerm: Rep[TermCell],
                                   rightTerm: Rep[TermCell],
-                                  rules: Rep[Array[RuleCell]]):Rep[Unit]
+                                  rules: Rep[RuleCell]):Rep[Unit]
 
   protected def doRightTermUpdates(out: Rep[Array[Real]],
                                   grammar: Rep[Int],
                                   left: Rep[ParseCell],
                                   rightTerm: Rep[TermCell],
-                                  rules: Rep[Array[RuleCell]]):Rep[Unit]
+                                  rules: Rep[RuleCell]):Rep[Unit]
 
   protected def doNTRuleUpdates(out: Rep[Array[Real]],
                                 left: Rep[ParseCell],
                                 right: Rep[ParseCell],
                                 grammar: Rep[Int],
                                 rulePartition: IndexedSeq[(Rule[Int], Int)],
-                                rules: Rep[Array[RuleCell]]):Rep[Unit]
+                                rules: Rep[RuleCell]):Rep[Unit]
 
 
   def insideUnaries = kernel6("inside_unaries"){ (insideBots: Rep[Array[ParseCell] with Global],
@@ -90,8 +92,28 @@ trait InsideKernels extends ParserCommon { self: Base with KernelOps with RangeO
       val sentOffset = offsets(sentence)
       val top = CELL(insideTops, sentOffset, begin, end)
       val bot = CELL(insideBots, sentOffset, begin, end)
-      top.syms(4)(grammar) = zero
       doInsideUnaries(top, bot, grammar, rules)
+    } else unit() // needed because scala is silly
+  }
+
+  def insideTermUnaries = kernel6("inside_unaries"){ (insidePos: Rep[Array[TermCell] with Global],
+                                                      insideTops: Rep[Array[ParseCell] with Global],
+                                                      offsets: Rep[Array[Int] with Global],
+                                                      lengths: Rep[Array[Int] with Global],
+                                                      lengthOffsets: Rep[Array[Int] with Global],
+                                                      rules: Rep[RuleCell with Global]) =>
+    val sentence = globalId(0)
+    val begin = globalId(1)
+    val grammar = globalId(2)
+    val end = begin + 1
+    val length = lengths(sentence)
+    val lengthOff = lengthOffsets(sentence)
+
+    if (end <= length) {
+      val sentOffset = offsets(sentence)
+      val top = CELL(insideTops, sentOffset, begin, end)
+      val bot = insidePos(lengthOff + begin)
+      doInsideTermUnaries(top, bot, grammar, rules)
     } else unit() // needed because scala is silly
   }
 
@@ -100,6 +122,11 @@ trait InsideKernels extends ParserCommon { self: Base with KernelOps with RangeO
                                 grammar: Rep[Int],
                                 rules: Rep[RuleCell]):Rep[Unit]
 
+  protected def doInsideTermUnaries(top: Rep[ParseCell],
+                                    bot: Rep[TermCell],
+                                    grammar: Rep[Int],
+                                    rules: Rep[RuleCell]):Rep[Unit]
+
 
   def insideNonterms(partitionId: Int, rulePartition: IndexedSeq[(Rule[Int], Int)]) = {
     kernel6("inside_nonterms_"+partitionId){ (insideBots: Rep[Array[ParseCell] with Global],
@@ -107,7 +134,7 @@ trait InsideKernels extends ParserCommon { self: Base with KernelOps with RangeO
                                               offsets: Rep[Array[Int] with Global],
                                               lengths: Rep[Array[Int] with Global],
                                               spanLength: Rep[Int],
-                                              rules: Rep[Array[RuleCell] with Global]) =>
+                                              rules: Rep[RuleCell with Global]) =>
       val sentence = globalId(0)
       val begin = globalId(1)
       val gram = globalId(2)

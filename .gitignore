@@ -18,3 +18,5 @@ project/user.sbt
 # IntelliJ specific
 .idea/
 .idea_modules/
+
+.*.swp

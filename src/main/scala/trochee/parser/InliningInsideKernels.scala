@@ -17,6 +17,21 @@ trait InliningInsideKernels extends InsideKernels { self: Base with KernelOps wi
       for((r,id) <- rr) {
         val topSym = top.syms(parent).apply(grammar)
         val botScore = bot.syms(r.child) apply grammar
+        top.syms(parent)(grammar) = mad(topSym, botScore, rules.rules(id)(grammar))
+        unitToRepUnit()
+      }
+
+      unitToRepUnit()
+
+    }
+    unitToRepUnit()
+  }
+
+  protected def doInsideTermUnaries(top: Rep[ParseCell], bot: Rep[TermCell], grammar: Rep[Int], rules: Rep[RuleCell]): Rep[Unit] = {
+    for( (parent, rr) <- this.grammar.unaryTermRules.groupBy(_._1.parent)) {
+      for((r,id) <- rr) {
+        val topSym = top.syms(parent).apply(grammar)
+        val botScore = bot.syms(r.child) apply grammar
         top.syms(parent)(grammar) = (topSym + botScore * rules.rules(id)(grammar))
         unitToRepUnit()
       }
