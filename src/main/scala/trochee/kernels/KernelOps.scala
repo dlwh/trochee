@@ -66,11 +66,12 @@ abstract class AddVectorsKernel { this: Base with KernelOps =>
 }
 
 
-trait KernelOpsExp extends KernelOps with BaseFatExp with Variables with CStructExp with ExtraBaseExp with SpireOpsExp with OrderingOpsExp with IfThenElseExp with FunctionsExp with RingOpsExp {
+trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStructExp with ExtraBaseExp with SpireOpsExp with OrderingOpsExp with IfThenElseExp with FunctionsExp with RingOpsExp {
   def workDim(implicit pos: SourceContext) : Rep[Int] = WorkDim()
   def globalSize(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GlobalSize(dim)(pos)
   def globalId(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GlobalId(dim)(pos)
 
+  case class Ignore[T]() extends Def[T]
   case class WorkDim() extends Def[Int]
   case class GlobalSize(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
   case class GlobalId(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
@@ -80,77 +81,79 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with Variables with CStruct
   }
 
   override def kernel[T1:Manifest:TypeTag](name: String)(fn: (Rep[T1]) => Unit): Kernel = {
-    val x1 = fresh[T1]
+    val x1 = freshMut[T1]
     val y = reifyEffects(unit(fn(x1))) // unfold completely at the definition site.
     Kernel(name, List(x1), y, IndexedSeq(qualifier[T1]))
   }
 
   override def kernel2[T1:Manifest:TypeTag, T2: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2]) => Unit): Kernel = {
-    val x1 = fresh[T1]
-    val x2 = fresh[T2]
+    val x1 = freshMut[T1]
+    val x2 = freshMut[T2]
     val y = reifyEffects(unit(fn(x1, x2))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2), y, IndexedSeq(qualifier[T1], qualifier[T2]))
   }
 
+  def freshMut[T:Manifest] = reflectMutableSym(fresh[T])
+
   override def kernel3[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3]) => Unit): Kernel = {
-    val x1 = fresh[T1]
-    val x2 = fresh[T2]
-    val x3 = fresh[T3]
+    val x1 = freshMut[T1]
+    val x2 = freshMut[T2]
+    val x3 = freshMut[T3]
     val y = reifyEffects(unit(fn(x1, x2, x3))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3]))
   }
 
   override def kernel4[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4]) => Unit): Kernel = {
-    val x1 = fresh[T1]
-    val x2 = fresh[T2]
-    val x3 = fresh[T3]
-    val x4 = fresh[T4]
+    val x1 = freshMut[T1]
+    val x2 = freshMut[T2]
+    val x3 = freshMut[T3]
+    val x4 = freshMut[T4]
     val y = reifyEffects(unit(fn(x1, x2, x3, x4))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3, x4), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4]))
   }
 
   override def kernel5[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5]) => Unit): Kernel = {
-    val x1 = fresh[T1]
-    val x2 = fresh[T2]
-    val x3 = fresh[T3]
-    val x4 = fresh[T4]
-    val x5 = fresh[T5]
+    val x1 = freshMut[T1]
+    val x2 = freshMut[T2]
+    val x3 = freshMut[T3]
+    val x4 = freshMut[T4]
+    val x5 = freshMut[T5]
     val y = reifyEffects(unit(fn(x1, x2, x3, x4, x5))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3, x4, x5), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5]))
   }
 
   override def kernel6[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6]) => Unit): Kernel = {
-    val x1 = fresh[T1]
-    val x2 = fresh[T2]
-    val x3 = fresh[T3]
-    val x4 = fresh[T4]
-    val x5 = fresh[T5]
-    val x6 = fresh[T6]
+    val x1 = freshMut[T1]
+    val x2 = freshMut[T2]
+    val x3 = freshMut[T3]
+    val x4 = freshMut[T4]
+    val x5 = freshMut[T5]
+    val x6 = freshMut[T6]
     val y = reifyEffects(unit(fn(x1, x2, x3, x4, x5, x6))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3, x4, x5, x6), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5], qualifier[T6]))
   }
 
   override def kernel7[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7]) => Unit): Kernel = {
-    val x1 = fresh[T1]
-    val x2 = fresh[T2]
-    val x3 = fresh[T3]
-    val x4 = fresh[T4]
-    val x5 = fresh[T5]
-    val x6 = fresh[T6]
-    val x7 = fresh[T7]
+    val x1 = freshMut[T1]
+    val x2 = freshMut[T2]
+    val x3 = freshMut[T3]
+    val x4 = freshMut[T4]
+    val x5 = freshMut[T5]
+    val x6 = freshMut[T6]
+    val x7 = freshMut[T7]
     val y = reifyEffects(unit(fn(x1, x2, x3, x4, x5, x6, x7))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3, x4, x5, x6, x7), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5], qualifier[T6], qualifier[T7]))
   }
 
   override def kernel8[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8]) => Unit): Kernel = {
-    val x1 = fresh[T1]
-    val x2 = fresh[T2]
-    val x3 = fresh[T3]
-    val x4 = fresh[T4]
-    val x5 = fresh[T5]
-    val x6 = fresh[T6]
-    val x7 = fresh[T7]
-    val x8 = fresh[T8]
+    val x1 = freshMut[T1]
+    val x2 = freshMut[T2]
+    val x3 = freshMut[T3]
+    val x4 = freshMut[T4]
+    val x5 = freshMut[T5]
+    val x6 = freshMut[T6]
+    val x7 = freshMut[T7]
+    val x8 = freshMut[T8]
     val y = reifyEffects(unit(fn(x1, x2, x3, x4, x5, x6, x7, x8))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3, x4, x5, x6, x7, x8), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5], qualifier[T6], qualifier[T7], qualifier[T8]))
   }

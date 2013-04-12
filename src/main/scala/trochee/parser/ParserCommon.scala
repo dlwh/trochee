@@ -9,7 +9,7 @@ import virtualization.lms.common.RangeOps
 import virtualization.lms.common.Base
 import virtualization.lms.common.IfThenElseExp
 import trochee.util.CStructExp
-import trochee.basic.{SpireOps, RingOps}
+import trochee.basic.{AccumulatorOpsExp, AccumulatorOps, SpireOps, RingOps}
 import scala.virtualization.lms.util.OverloadHack
 import scala.collection.mutable.ArrayBuffer
 import scala.virtualization.lms.internal.Effects
@@ -18,12 +18,8 @@ import scala.virtualization.lms.internal.Effects
  * 
  * @author dlwh
  */
-trait ParserCommon extends ExtraBase with SpireOps with OverloadHack { self: Base with KernelOps with RangeOps =>
-  type Real
-  implicit def manifestReal: Manifest[Real]
-  implicit def rigRepReal: Numeric[Real]
-  def zero: Rep[Real] = unit[Real](implicitly[Numeric[Real]].zero)
-  def mad(a: Rep[Real], b: Rep[Real], c: Rep[Real]):Rep[Real]
+trait ParserCommon extends ExtraBase with AccumulatorOps with SpireOps with OverloadHack { self: Base with KernelOps with RangeOps =>
+
 
   type ParseChart
   implicit def manifestParseChart: Manifest[ParseChart]
@@ -44,9 +40,7 @@ trait ParserCommon extends ExtraBase with SpireOps with OverloadHack { self: Bas
 
 
 
-  type Accumulator
   def nontermAccumulator: Accumulator
-  def infix_mad(acc: Accumulator, sym: Rep[Int], score1: Rep[Real], score2: Rep[Real]):Rep[Unit]
 
 
   /*
@@ -80,7 +74,7 @@ trait ParserCommon extends ExtraBase with SpireOps with OverloadHack { self: Bas
   def numSyms: Int = grammar.numSyms
 }
 
-trait ParserCommonExp extends ParserCommon with BaseFatExp with CStructExp with Effects { self: Base with KernelOpsExp with RangeOpsExp with IfThenElseExp =>
+trait ParserCommonExp extends ParserCommon with BaseFatExp with CStructExp with Effects with AccumulatorOpsExp { self: Base with KernelOpsExp with RangeOpsExp with IfThenElseExp =>
 
 
   sealed trait ParseCell
@@ -96,13 +90,7 @@ trait ParserCommonExp extends ParserCommon with BaseFatExp with CStructExp with 
   trait RuleCell
   trait ParseChart
   trait TermChart
-  case class Accumulator(size: Int, prefix: String="out")  {
-    val outSyms = ArrayBuffer[Int]()
-    val _declared = collection.mutable.BitSet()
-    def declared(id: Rep[Int]) = _declared(coerce(id))
-    def declare(id: Rep[Int]) = _declared += (coerce(id))
-    def local(id: Rep[Int]) = s"${prefix}${coerce(id)}"
-  }
+
     
   def infix_rules(cell: Rep[RuleCell], r: Rep[Int], g: Rep[Int]):Rep[Real] = RuleDeref(cell, r, g)
 
@@ -111,7 +99,6 @@ trait ParserCommonExp extends ParserCommon with BaseFatExp with CStructExp with 
 
   case class Mad(a: Rep[Real], b: Rep[Real], c: Rep[Real]) extends Def[Real]
   case class CellApply(cell: ParseCell, sym: Rep[Int])(implicit val pos: SourceContext) extends Def[Real]
-  case class MadUpdate(acc: Accumulator, sym: Rep[Int], score1: Rep[Real], score2: Rep[Real]) extends Def[Unit]
   case class WriteOutput(cell: ParseCell, acc: Accumulator) extends Def[Unit]
 
   def mad(a: Rep[Real], b: Rep[Real], c: Rep[Real]): Rep[Real] = Mad(a,b,c)
@@ -124,12 +111,8 @@ trait ParserCommonExp extends ParserCommon with BaseFatExp with CStructExp with 
 
   def nontermAccumulator: Accumulator = Accumulator(grammar.numNonTerminals)
 
-  def infix_mad(acc: Accumulator, sym: Rep[Int], score1: Rep[Real], score2: Rep[Real]): Rep[Unit] = {
-    acc.outSyms += coerce(sym)
-    reflectEffect(MadUpdate(acc, sym, score1, score2))
-  }
 
-  private def coerce(sym: Rep[Int]) = sym match { case Const(x) => x } 
+
 
 
   def infix_update(chart: Rep[TermChart], offset: Rep[Int], pos: Rep[Int], gram: Rep[Int], acc: Accumulator): Rep[Unit] = reflectEffect(WriteOutput(TCell(chart, offset, pos, gram), acc), infix_andAlso(Simple(), Write(List(chart.asInstanceOf[Sym[Any]])) ))
