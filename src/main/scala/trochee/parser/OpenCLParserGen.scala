@@ -9,7 +9,7 @@ trait OpenCLParserGen extends OpenCLKernelCodegen with GenSpireOps {
   val IR: Expressions with Effects with FatExpressions with trochee.kernels.KernelOpsExp with ParserCommonExp with IfThenElseExp with SpireOpsExp
   import IR._
   lazy val typeMaps = Map[Class[_],String](manifestParseChart.erasure -> "PARSE_CELL" ,
-//    manifestTermCell.erasure -> "term_cell",
+    manifestTermChart.erasure -> "PARSE_CELL",
     manifestRuleCell.erasure -> "rule_cell*")
   override def remap[A](m: Manifest[A]) : String = {
     typeMaps.getOrElse(m.erasure, super.remap(m))
@@ -26,6 +26,8 @@ trait OpenCLParserGen extends OpenCLKernelCodegen with GenSpireOps {
         cacheAndEmit(sym, s"mad(${quote(a)}, ${quote(b)}, ${quote(c)})")
       case app@CellApply(NTCell(cell, off, begin, end, gram), symsym) =>
         cacheAndEmit(addPos(sym, app), s"${quote(cell)}[(${quote(symsym)} * CHART_SIZE + ${quote(off)} + TRIANGULAR_INDEX(${quote(begin)}, ${quote(end)}))*NUM_GRAMMARS + ${quote(gram)}]")
+      case app@CellApply(TCell(cell, off, begin, gram), symsym) =>
+        cacheAndEmit(addPos(sym, app), s"${quote(cell)}[(${quote(symsym)} * CHART_SIZE + ${quote(off)} + ${quote(begin)})*NUM_GRAMMARS + ${quote(gram)}]")
       case MadUpdate(acc, index, a, b) =>
         val id = acc.prefix + index
         if(!acc.declared(index)) {
