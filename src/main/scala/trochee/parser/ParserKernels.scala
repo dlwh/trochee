@@ -23,16 +23,6 @@ object NullGrammar extends ParserKernels with InliningInsideKernels with ParserC
   val codegen = new OpenCLKernelCodegen with OpenCLKernelGenArrayOps with OpenCLParserGen {
     val IR: self.type = self
   }
-  println(codegen.mkKernel(insideUnaries))
-  protected def doLeftTermUpdates(out: Rep[Array[Real]], grammar: Rep[Int], leftTerm: Rep[TermCell], right: Rep[ParseCell], rules: Rep[RuleCell]): Rep[Unit] = unit()
-
-  protected def doBothTermUpdates(out: Rep[Array[Real]], grammar: Rep[Int], leftTerm: Rep[TermCell], rightTerm: Rep[TermCell], rules: Rep[RuleCell]): Rep[Unit] = unit()
-
-  protected def doRightTermUpdates(out: Rep[Array[Real]], grammar: Rep[Int], left: Rep[ParseCell], rightTerm: Rep[TermCell], rules: Rep[RuleCell]): Rep[Unit] = unit()
-
-  protected def doNTRuleUpdates(out: Rep[Array[Real]], left: Rep[ParseCell], right: Rep[ParseCell], grammar: Rep[Int], rulePartition: IndexedSeq[(Rule[Int], Int)], rules: Rep[RuleCell]): Rep[Unit] = unit()
-
-  def writeOut(out: Rep[ParseCell], in: Rep[Array[Real]]): Rep[Unit] = unit()
 
   type Real = Float
 
@@ -42,22 +32,42 @@ object NullGrammar extends ParserKernels with InliningInsideKernels with ParserC
 
 
   val grammar = Grammar.parseFile(new java.io.File("src/main/resources/trochee/parser/demo.grammar.txt"))
+
+  println(codegen.mkKernel(insideUnaries))
 }
 
 trait OpenCLParserGen extends OpenCLKernelCodegen with GenSpireOps {
   val IR: Expressions with Effects with FatExpressions with trochee.kernels.KernelOpsExp with ParserCommonExp with IfThenElseExp with SpireOpsExp
   import IR._
-  lazy val typeMaps = Map[Class[_],String](manifestParseCell.erasure -> "parse_cell" ,
-    manifestTermCell.erasure -> "term_cell",
+  lazy val typeMaps = Map[Class[_],String](manifestParseChart.erasure -> "PARSE_CELL" ,
+//    manifestTermCell.erasure -> "term_cell",
     manifestRuleCell.erasure -> "rule_cell*")
   override def remap[A](m: Manifest[A]) : String = {
     typeMaps.getOrElse(m.erasure, super.remap(m))
+  }
+
+  override def quote(x: Exp[Any]) = x match {
+    case RuleDeref(cell, rule, grammar) => preferNoLocal(cell) + s"->rules[${quote(rule)}][${quote(grammar)}]"
+    case _ => super.quote(x)
   }
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) {
     rhs match {
       case Mad(a,b,c) =>
         cacheAndEmit(sym, s"mad(${quote(a)}, ${quote(b)}, ${quote(c)})")
+      case app@CellApply(NTCell(cell, off, begin, end, gram), symsym) =>
+        cacheAndEmit(addPos(sym, app), s"${quote(cell)}[(${quote(symsym)} * CHART_SIZE + ${quote(off)} + TRIANGULAR_INDEX(${quote(begin)}, ${quote(end)}))*NUM_GRAMMARS + ${quote(gram)}]")
+      case MadUpdate(acc, index, a, b) =>
+        val local = acc.local(index)
+        if(!acc.declared(index)) {
+          acc.declare(index)
+          cacheAndEmit(sym, s"float $local = mad($local, ${quote(a)}, ${quote(b)})")
+        } else {
+          cacheAndEmit(sym, s"$local = mad($local, ${quote(a)}, ${quote(b)})")
+        }
+
+      case WriteOutput(NTCell(cell, off, begin, end, gram), acc) =>
+        cacheAndEmit(sym, s"XXX")
       case _ => super.emitNode(sym, rhs)
     }
 

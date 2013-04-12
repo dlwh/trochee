@@ -11,6 +11,8 @@ import scala.collection.mutable
  */
 trait Grammar[T, Real] {
   def numSyms: Int = symIndex.size
+  def numNonTerminals: Int = nontermIndex.size
+  def numTerminals: Int = termIndex.size
 
   def symIndex: Index[T]
   def nontermIndex: Index[T]
@@ -123,7 +125,7 @@ object Grammar {
         val bothTermRules = groupedByTerminess.getOrElse(true -> true, IndexedSeq.empty).map(patchRules _)
         val nontermRules = groupedByTerminess.getOrElse(false -> false, IndexedSeq.empty).map(patchRules _)
 
-        val uByTerminess = unaries.asInstanceOf[IndexedSeq[(UnaryRule[(Int, Boolean)], Int)]].groupBy {case (r,i) => r.child._2}
+        val uByTerminess = unaries.asInstanceOf[IndexedSeq[(UnaryRule[(Int, Boolean)], Int)]].filter(p => !p._1.child._2 || (p._1.child != p._1.parent)) groupBy {case (r,i) => r.child._2}
         def patchU(pair: (UnaryRule[(Int, Boolean)], Int)) = pair._1.map(_._1) -> pair._2
         val tUnaries = uByTerminess.getOrElse(true, IndexedSeq.empty).map(patchU _)
         val ntUnaries = uByTerminess.getOrElse(false, IndexedSeq.empty).map(patchU _)

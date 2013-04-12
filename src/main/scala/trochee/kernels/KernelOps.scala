@@ -51,7 +51,9 @@ trait KernelOps extends ExtraBase with RingOps with OrderingOps with IfThenElse 
 
 
   // nice implicits
-  implicit def const[X<: AnyVal: Manifest](x: X):Rep[X]
+  implicit def const(x: Int):Rep[Int] = unit(x)
+  implicit def const(x: Float):Rep[Float] = unit(x)
+  implicit def const(x: Long):Rep[Long] = unit(x)
 
 }
 
@@ -117,12 +119,7 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with Variables with CStruct
     Kernel(name, List(x1, x2, x3, x4, x5), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5]))
   }
 
-
-
-  implicit def const[X <: AnyVal:Manifest](x: X): Rep[X] = unit(x)
-
   override def kernel6[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6]) => Unit): Kernel = {
-    SourceContext.debug = true
     val x1 = fresh[T1]
     val x2 = fresh[T2]
     val x3 = fresh[T3]
