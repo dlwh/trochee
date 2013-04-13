@@ -8,12 +8,23 @@ import scala.virtualization.lms.common.IfThenElseExp
 trait OpenCLParserGen extends OpenCLKernelCodegen with GenSpireOps {
   val IR: Expressions with Effects with FatExpressions with trochee.kernels.KernelOpsExp with ParserCommonExp with IfThenElseExp with SpireOpsExp
   import IR._
-  lazy val typeMaps = Map[Class[_],String](manifestParseChart.erasure -> "PARSE_CELL" ,
+  lazy val typeMaps = {
+    Map[Class[_],String](manifestParseChart.erasure -> "PARSE_CELL" ,
     manifestTermChart.erasure -> "PARSE_CELL",
     manifestRuleCell.erasure -> "rule_cell*")
+}
   override def remap[A](m: Manifest[A]) : String = {
     typeMaps.getOrElse(m.erasure, super.remap(m))
   }
+
+  override def register() {
+    val emptyArrayExp = Const(Array.empty[Array[Double]])
+    define("PARSE_CELL", "float*")
+    struct("rule_cell", new CStruct { val rules: Array[Array[Double]] = emptyArrayExp})
+    super.register()
+  }
+
+
 
   override def quote(x: Exp[Any]) = x match {
     case RuleDeref(cell, rule, grammar) => preferNoLocal(cell) + s"->rules[${quote(rule)}][${quote(grammar)}]"

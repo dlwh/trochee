@@ -11,7 +11,6 @@ import com.nativelibs4java.opencl.JavaCL
 class CompileInsideTest extends FunSuite {
   test("unaries") {
     val header = """
-#define PARSE_CELL float*
 #define CHART_SIZE 100
 
 #define NUM_GRAMMARS 1
