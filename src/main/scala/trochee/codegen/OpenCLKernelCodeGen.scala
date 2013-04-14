@@ -14,27 +14,23 @@ trait OpenCLKernelCodegen extends GenericCodegen with OpenCLKernelGenBase with O
   val IR: Expressions with Effects with FatExpressions with KernelOpsExp with OrderingOpsExp with IfThenElseExp
   import IR._
 
-  private val headerPieces = collection.mutable.ArrayBuffer[String]()
   protected def writeHeader() {
-    for(piece <- headerPieces) {
-      stream.println(piece)
-    }
-  }
-
-  trait CStruct extends Struct[Exp]
-  case class CStructSpec[T:Manifest](args: IndexedSeq[(String, Manifest[_])]) extends Rep[T] {
-    def rep = {
+    for(piece <- headerPieces) piece match {
+      case Define(name, value) => stream.println(s"#define $name $value")
+      case Struct(name, struct) => 
+      import struct._
       tabWidth += 1
-      val ret = args.map{case (x,tpe) => remap(tpe) + " " + x +";"}.mkString("struct {","\n" + indent, "}")
+      val ret = args.map{
+        case (x,ManifestField(man)) => remap(man) + " " + x +";"
+        case (x,LiteralArrayField(baseType, dims)) => remap(baseType) + " " + x + dims.map("["+_+"]").mkString +";"
+      }.mkString("struct {","\n" + indent, "}")
       tabWidth -= 1
-      ret
+
+      stream.println(s"typedef $ret $name;")
     }
   }
-  def __new[T:Manifest](args: (String, Boolean, Exp[T] => Rep[_])*) = new CStructSpec(args.map{ case (name, _, rhs) => name -> rhs(fresh[T]).tp }.toIndexedSeq)
 
-  def define[T<:AnyVal](name: String, value: T) { headerPieces += s"#define $name $value" }
-  def define(name: String, value: String) { headerPieces += s"#define $name $value" }
-  def struct(name: String, value: Rep[CStruct]) { headerPieces += s"typedef ${value.asInstanceOf[CStructSpec[_]].rep} $name;" }
+
 
   def indent: String = "  " * tabWidth
 
@@ -64,7 +60,6 @@ trait OpenCLKernelCodegen extends GenericCodegen with OpenCLKernelGenBase with O
     }
 
     val ret = sout.toString
-    println(ret)
     ret
   }
 

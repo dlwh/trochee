@@ -20,6 +20,8 @@ import scala.virtualization.lms.internal.Effects
  */
 trait ParserCommon extends ExtraBase with AccumulatorOps with SpireOps with OverloadHack { self: Base with KernelOps with RangeOps =>
 
+  def numGrammars: Int
+
 
   type ParseChart
   implicit def manifestParseChart: Manifest[ParseChart]
@@ -74,7 +76,7 @@ trait ParserCommon extends ExtraBase with AccumulatorOps with SpireOps with Over
   def numSyms: Int = grammar.numSyms
 }
 
-trait ParserCommonExp extends ParserCommon with BaseFatExp with CStructExp with Effects with AccumulatorOpsExp { self: Base with KernelOpsExp with RangeOpsExp with IfThenElseExp =>
+trait ParserCommonExp extends ParserCommon with BaseFatExp with CStructExp with KernelOpsExp with Effects with AccumulatorOpsExp { self: Base with RangeOpsExp with IfThenElseExp =>
 
 
   sealed trait ParseCell
@@ -90,6 +92,14 @@ trait ParserCommonExp extends ParserCommon with BaseFatExp with CStructExp with 
   trait RuleCell
   trait ParseChart
   trait TermChart
+
+  override def register() {
+    define("PARSE_CELL", "float*")
+    define("NUM_GRAMMARS", numGrammars)
+    define("NUM_RULES", grammar.ruleScores.length)
+    struct("rule_cell", new CStruct { val rules: Array[Array[Real]] = Array.ofDim[Real](grammar.ruleScores.length, numGrammars)})
+    super.register()
+  }
 
     
   def infix_rules(cell: Rep[RuleCell], r: Rep[Int], g: Rep[Int]):Rep[Real] = RuleDeref(cell, r, g)
@@ -111,11 +121,9 @@ trait ParserCommonExp extends ParserCommon with BaseFatExp with CStructExp with 
 
   def nontermAccumulator: Accumulator = Accumulator(grammar.numNonTerminals)
 
-
-
-
-
   def infix_update(chart: Rep[TermChart], offset: Rep[Int], pos: Rep[Int], gram: Rep[Int], acc: Accumulator): Rep[Unit] = reflectEffect(WriteOutput(TCell(chart, offset, pos, gram), acc), infix_andAlso(Simple(), Write(List(chart.asInstanceOf[Sym[Any]])) ))
 
   def infix_apply(chart: Rep[TermChart], offset: Rep[Int], pos: Rep[Int], gram: Rep[Int]) = TCell(chart, offset, pos, gram)
+
+
 }

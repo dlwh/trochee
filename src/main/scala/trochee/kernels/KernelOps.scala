@@ -12,6 +12,7 @@ import spire.implicits._
 import spire.syntax._
 import spire.math._
 import trochee.parser.{ExtraBase, ExtraBaseExp}
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * 
@@ -49,6 +50,14 @@ trait KernelOps extends ExtraBase with RingOps with OrderingOps with IfThenElse 
 
   type Kernel
 
+  trait CStruct extends Struct[Rep]
+
+  def __new[T:Manifest](args: (String, Boolean, Rep[T] => Rep[_])*):Rep[T] //= new CStructSpec(args.map{ case (name, _, rhs) => name -> rhs(fresh[T]).tp }.toIndexedSeq)
+
+  def define[T<:AnyVal](name: String, value: T)// { headerPieces += s"#define $name $value" }
+  def define(name: String, value: String) //{ headerPieces += s"#define $name $value" }
+  def struct(name: String, value: Rep[CStruct]) //{ headerPieces += s"typedef ${value.asInstanceOf[CStructSpec[_]].rep} $name;" }
+
 
   // nice implicits
   implicit def const(x: Int):Rep[Int] = unit(x)
@@ -67,6 +76,56 @@ abstract class AddVectorsKernel { this: Base with KernelOps =>
 
 
 trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStructExp with ExtraBaseExp with SpireOpsExp with OrderingOpsExp with IfThenElseExp with FunctionsExp with RingOpsExp {
+
+  case class CStructSpec[T:Manifest](args: IndexedSeq[(String, StructField)]) extends Rep[T] {
+//    def rep = {
+
+//    }
+  }
+
+  def register() {}
+
+
+  def define[T<:AnyVal](name: String, value: T) { _headerPieces += Define(name, value) }
+  def define(name: String, value: String) { _headerPieces += Define(name, value)}
+  def struct(name: String, value: Rep[CStruct]) { _headerPieces += Struct(name, value.asInstanceOf[CStructSpec[_]])}
+
+
+  private val _headerPieces = new ArrayBuffer[HeaderPart]()
+
+  def headerPieces:IndexedSeq[HeaderPart] = _headerPieces
+
+  sealed trait StructField
+  case class ManifestField[T](man: Manifest[T]) extends StructField
+  case class LiteralArrayField[T](baseType: Manifest[T], dim: IndexedSeq[Int]) extends StructField
+
+  trait HeaderPart
+  case class Define[T](name: String, value: T) extends HeaderPart
+  case class Struct[T](name: String, spec: CStructSpec[T]) extends HeaderPart
+  implicit def liftString(x: String): Exp[String] = Const(x)
+  implicit def liftArray[T:Manifest](x: Array[T]): Exp[Array[T]] = LiteralArray[T](x)
+  case class LiteralArray[T:Manifest](dims: Array[T]) extends Exp[Array[T]]
+
+
+  def __new[T:Manifest](args: (String, Boolean, Rep[T] => Rep[_])*):Rep[T] = {
+    val mapped = for( (name, _, rhs) <- args) yield rhs(fresh[T]) match {
+      case LiteralArray(arr) =>
+        def unroll[U](t: Array[U]): (Manifest[U], IndexedSeq[Int]) = {
+          if(t.getClass.getComponentType.isArray) {
+            val (x, dims) = unroll(t(0).asInstanceOf[Array[_]])
+            x.asInstanceOf[Manifest[U]] -> (dims :+ t.length)
+          } else {
+            Manifest.classType(t.getClass.getComponentType) -> IndexedSeq(t.length)
+          }
+        }
+        val (x, dims) = unroll(arr)
+        name -> LiteralArrayField(x, dims.reverse)
+      case v => name -> ManifestField( v.tp)
+    }
+    new CStructSpec(mapped.toIndexedSeq)
+  }
+
+
   def workDim(implicit pos: SourceContext) : Rep[Int] = WorkDim()
   def globalSize(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GlobalSize(dim)(pos)
   def globalId(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GlobalId(dim)(pos)
@@ -219,13 +278,3 @@ def rec(offset: Int): Array[Array[Int]] = {
 
 
 
-object Usage {
-  val concreteProg = new AddVectorsKernel with EffectExp with KernelOpsExp { self =>
-    val IR: self.type = self
-    val codegen = new OpenCLKernelCodegen with OpenCLKernelGenArrayOps with OpenCLKernelGenNumericOps {
-      val IR: self.type = self
-    }
-    println(codegen.mkKernel(prog))
-  }
-
-}

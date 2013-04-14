@@ -17,15 +17,6 @@ trait OpenCLParserGen extends OpenCLKernelCodegen with GenSpireOps {
     typeMaps.getOrElse(m.erasure, super.remap(m))
   }
 
-  override def register() {
-    val emptyArrayExp = Const(Array.empty[Array[Double]])
-    define("PARSE_CELL", "float*")
-    struct("rule_cell", new CStruct { val rules: Array[Array[Double]] = emptyArrayExp})
-    super.register()
-  }
-
-
-
   override def quote(x: Exp[Any]) = x match {
     case RuleDeref(cell, rule, grammar) => preferNoLocal(cell) + s"->rules[${quote(rule)}][${quote(grammar)}]"
     case _ => super.quote(x)

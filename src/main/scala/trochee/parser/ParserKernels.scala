@@ -32,11 +32,12 @@ object NullGrammar extends ParserKernels with InliningInsideKernels with ParserC
 
 
   val grammar = Grammar.parseFile(new java.io.File("src/main/resources/trochee/parser/demo.grammar.txt"))
+  def numGrammars: Int = 1
 
   def main(args: Array[String]) {
     println(codegen.mkKernel(insideUnaries))
-
   }
+  register()
 }
 
 
