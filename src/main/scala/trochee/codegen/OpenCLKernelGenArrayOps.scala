@@ -3,7 +3,7 @@ package trochee.codegen
 import virtualization.lms.internal.{FatExpressions, Effects, Expressions}
 import trochee.kernels.KernelOpsExp
 import java.util
-import trochee.parser.ExtraBaseExp
+import trochee.basic.ExtraBaseExp
 
 /**
  * 

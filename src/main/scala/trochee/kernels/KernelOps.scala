@@ -6,12 +6,11 @@ import virtualization.lms.internal.{FatExpressions, Effects, Expressions}
 import reflect.{SourceContext, ClassTag}
 import trochee.codegen.{OpenCLKernelGenArrayOps, OpenCLKernelGenNumericOps, OpenCLKernelCodegen}
 import trochee.util.CStructExp
-import trochee.basic.{SpireOpsExp, RingOpsExp, RingOps, RigOps}
+import trochee.basic._
 import spire.algebra._
 import spire.implicits._
 import spire.syntax._
 import spire.math._
-import trochee.parser.{ExtraBase, ExtraBaseExp}
 import scala.collection.mutable.ArrayBuffer
 
 /**
