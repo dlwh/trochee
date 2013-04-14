@@ -9,7 +9,7 @@ scalaOrganization := "org.scala-lang.virtualized"
 scalaVersion := "2.10.1"
 
 
-
+version := "0.1-SNAPSHOT"
 
 libraryDependencies += "EPFL" % "lms_2.10.0" % "0.3-SNAPSHOT"
 
