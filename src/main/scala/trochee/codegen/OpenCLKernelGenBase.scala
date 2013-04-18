@@ -14,6 +14,13 @@ trait OpenCLKernelGenBase extends GenericFatCodegen with NiceNamesGen {
   import IR._
 
   override def quote(x: Exp[Any]): String = x match {
+    case Const(f: Float) => if(f == Float.PositiveInfinity) {
+      "INFINITY"
+    } else if(f == Float.NegativeInfinity) {
+      "-INFINITY"
+    } else{
+      super.quote(x)
+    }
     case FieldDeref(sym, field) => preferNoLocal(sym)+"." +field
     case FieldPointerDeref(sym, field) => preferNoLocal(sym)+"->" +field
     case _ => super.quote(x)

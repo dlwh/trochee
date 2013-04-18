@@ -5,6 +5,7 @@ import java.io.{StringWriter, PrintWriter}
 import trochee.kernels.{KernelOpsExp, KernelOps}
 import virtualization.lms.common.{OrderingOpsExp, IfThenElseExp}
 import trochee.util.NiceNamesGen
+import com.nativelibs4java.opencl._
 
 /**
  * 
@@ -38,7 +39,16 @@ trait OpenCLKernelCodegen extends GenericCodegen with OpenCLKernelGenBase with O
 
   def register() {}
 
-  def mkKernel(k: Kernel): String = {
+  def mkKernel(k: Kernel)(implicit context: CLContext):CLKernel = {
+    val source = emitKernelSource(k)
+    val prog = context.createProgram(source)
+    prog.setFastRelaxedMath()
+    prog.setUnsafeMathOptimizations()
+    prog.build()
+    prog.createKernel(k.name)
+  }
+
+  def emitKernelSource(k: Kernel): String = {
     (this) synchronized {
       if(!_registered) {
         _registered = true
