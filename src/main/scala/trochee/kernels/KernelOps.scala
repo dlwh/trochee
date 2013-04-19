@@ -12,6 +12,8 @@ import spire.implicits._
 import spire.syntax._
 import spire.math._
 import scala.collection.mutable.ArrayBuffer
+import com.thoughtworks.paranamer.{AdaptiveParanamer, CachingParanamer}
+import java.util
 
 /**
  * 
@@ -92,6 +94,12 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
 
   private val _headerPieces = new ArrayBuffer[HeaderPart]()
 
+  private val namedSyms = new util.IdentityHashMap[Sym[_], String]()
+
+  def nameForSym(sym: Sym[_]):Option[String] = {
+    Option(namedSyms.get(sym)).orElse(sym.pos.collectFirst { case pos if pos.assignedVariable.nonEmpty => pos.assignedVariable.get}).map(_ + "_" + sym.id)
+  }
+
   def headerPieces:IndexedSeq[HeaderPart] = _headerPieces
 
   sealed trait StructField
@@ -134,84 +142,93 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
   case class GlobalSize(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
   case class GlobalId(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
 
+  private val paranamer = new AdaptiveParanamer()
+
   case class Kernel protected[KernelOpsExp] (name: String, args: List[Sym[_]], fn: Block[Unit], qualifiers: IndexedSeq[String]) {
     require(args.length == this.qualifiers.length)
   }
 
   override def kernel[T1:Manifest:TypeTag](name: String)(fn: (Rep[T1]) => Unit): Kernel = {
-    val x1 = freshMut[T1]
+    val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
+    val x1 = freshMut[T1](args(0))
     val y = reifyEffects(unit(fn(x1))) // unfold completely at the definition site.
     Kernel(name, List(x1), y, IndexedSeq(qualifier[T1]))
   }
 
   override def kernel2[T1:Manifest:TypeTag, T2: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2]) => Unit): Kernel = {
-    val x1 = freshMut[T1]
-    val x2 = freshMut[T2]
+    val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
+    val x1 = freshMut[T1](args(0))
+    val x2 = freshMut[T2](args(1))
     val y = reifyEffects(unit(fn(x1, x2))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2), y, IndexedSeq(qualifier[T1], qualifier[T2]))
   }
 
-  def freshMut[T:Manifest] = reflectMutableSym(fresh[T])
 
   override def kernel3[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3]) => Unit): Kernel = {
-    val x1 = freshMut[T1]
-    val x2 = freshMut[T2]
-    val x3 = freshMut[T3]
+    val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
+    val x1 = freshMut[T1](args(0))
+    val x2 = freshMut[T2](args(1))
+    val x3 = freshMut[T3](args(2))
     val y = reifyEffects(unit(fn(x1, x2, x3))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3]))
   }
 
   override def kernel4[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4]) => Unit): Kernel = {
-    val x1 = freshMut[T1]
-    val x2 = freshMut[T2]
-    val x3 = freshMut[T3]
-    val x4 = freshMut[T4]
+    val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
+    val x1 = freshMut[T1](args(0))
+    val x2 = freshMut[T2](args(1))
+    val x3 = freshMut[T3](args(2))
+    val x4 = freshMut[T4](args(3))
     val y = reifyEffects(unit(fn(x1, x2, x3, x4))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3, x4), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4]))
   }
 
   override def kernel5[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5]) => Unit): Kernel = {
-    val x1 = freshMut[T1]
-    val x2 = freshMut[T2]
-    val x3 = freshMut[T3]
-    val x4 = freshMut[T4]
-    val x5 = freshMut[T5]
+    val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
+    val x1 = freshMut[T1](args(0))
+    val x2 = freshMut[T2](args(1))
+    val x3 = freshMut[T3](args(2))
+    val x4 = freshMut[T4](args(3))
+    val x5 = freshMut[T5](args(4))
     val y = reifyEffects(unit(fn(x1, x2, x3, x4, x5))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3, x4, x5), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5]))
   }
 
   override def kernel6[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6]) => Unit): Kernel = {
-    val x1 = freshMut[T1]
-    val x2 = freshMut[T2]
-    val x3 = freshMut[T3]
-    val x4 = freshMut[T4]
-    val x5 = freshMut[T5]
-    val x6 = freshMut[T6]
+    val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
+    val x1 = freshMut[T1](args(0))
+    val x2 = freshMut[T2](args(1))
+    val x3 = freshMut[T3](args(2))
+    val x4 = freshMut[T4](args(3))
+    val x5 = freshMut[T5](args(4))
+    val x6 = freshMut[T6](args(5))
     val y = reifyEffects(unit(fn(x1, x2, x3, x4, x5, x6))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3, x4, x5, x6), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5], qualifier[T6]))
   }
 
   override def kernel7[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7]) => Unit): Kernel = {
-    val x1 = freshMut[T1]
-    val x2 = freshMut[T2]
-    val x3 = freshMut[T3]
-    val x4 = freshMut[T4]
-    val x5 = freshMut[T5]
-    val x6 = freshMut[T6]
-    val x7 = freshMut[T7]
+    val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
+    val x1 = freshMut[T1](args(0))
+    val x2 = freshMut[T2](args(1))
+    val x3 = freshMut[T3](args(2))
+    val x4 = freshMut[T4](args(3))
+    val x5 = freshMut[T5](args(4))
+    val x6 = freshMut[T6](args(5))
+    val x7 = freshMut[T7](args(6))
     val y = reifyEffects(unit(fn(x1, x2, x3, x4, x5, x6, x7))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3, x4, x5, x6, x7), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5], qualifier[T6], qualifier[T7]))
   }
 
   override def kernel8[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8]) => Unit): Kernel = {
-    val x1 = freshMut[T1]
-    val x2 = freshMut[T2]
-    val x3 = freshMut[T3]
-    val x4 = freshMut[T4]
-    val x5 = freshMut[T5]
-    val x6 = freshMut[T6]
-    val x7 = freshMut[T7]
-    val x8 = freshMut[T8]
+    val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
+    val x1 = freshMut[T1](args(0))
+    val x2 = freshMut[T2](args(1))
+    val x3 = freshMut[T3](args(2))
+    val x4 = freshMut[T4](args(3))
+    val x5 = freshMut[T5](args(4))
+    val x6 = freshMut[T6](args(5))
+    val x7 = freshMut[T7](args(6))
+    val x8 = freshMut[T8](args(7))
     val y = reifyEffects(unit(fn(x1, x2, x3, x4, x5, x6, x7, x8))) // unfold completely at the definition site.
     Kernel(name, List(x1, x2, x3, x4, x5, x6, x7, x8), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5], qualifier[T6], qualifier[T7], qualifier[T8]))
   }
@@ -236,6 +253,13 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
     }
   }
 
+
+
+  private def freshMut[T:Manifest](name: String) = {
+    val sym = reflectMutableSym(fresh[T])
+    namedSyms.put(sym, name)
+    sym
+  }
 
 }
 
