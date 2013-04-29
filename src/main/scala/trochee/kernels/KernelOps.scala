@@ -39,15 +39,16 @@ trait KernelOps extends ExtraBase with RingOps with OrderingOps with IfThenElse 
 
 //  def mad(a: Rep[Float], b: Rep[Float], c: Rep[Float]): Rep[Float]
 
-  def kernel[T1:Manifest:TypeTag](name: String)(fn: (Rep[T1]) => Unit): Kernel
-  def kernel2[T1:Manifest:TypeTag, T2: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2]) => Unit): Kernel
-  def kernel3[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3]) => Unit): Kernel
-  def kernel4[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4]) => Unit): Kernel
-  def kernel5[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5]) => Unit): Kernel
-  def kernel6[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6]) => Unit): Kernel
-  def kernel7[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7]) => Unit): Kernel
-  def kernel8[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8]) => Unit): Kernel
-//  def kernel9[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag, T9: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8], Rep[T9]) => Unit): Kernel
+  def kernel[T1:Manifest:TypeTag](name: String, fn:(Rep[T1]) => Unit): Kernel
+  def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2]) => Unit): Kernel
+  def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3]) => Unit): Kernel
+  def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4]) => Unit): Kernel
+  def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5]) => Unit): Kernel
+  def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6]) => Unit): Kernel
+  def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7]) => Unit): Kernel
+  def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8]) => Unit): Kernel
+  def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag, T9: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8], Rep[T9]) => Unit): Kernel
+  def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag, T9: Manifest: TypeTag, T10: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8], Rep[T9], Rep[T10]) => Unit): Kernel
 
   type Kernel
 
@@ -69,10 +70,10 @@ trait KernelOps extends ExtraBase with RingOps with OrderingOps with IfThenElse 
 
 
 abstract class AddVectorsKernel { this: Base with KernelOps =>
-  def prog = kernel2("addVectors") { (x: Rep[Array[Double] with Global], y: Rep[Array[Double] with Global]) =>
+  def prog = kernel("addVectors", { (x: Rep[Array[Double] with Global], y: Rep[Array[Double] with Global]) =>
     val id = globalId(0)
     x(id) = x(id) + y(id)
-  }
+  })
 }
 
 
@@ -148,14 +149,14 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
     require(args.length == this.qualifiers.length)
   }
 
-  override def kernel[T1:Manifest:TypeTag](name: String)(fn: (Rep[T1]) => Unit): Kernel = {
+  override def kernel[T1:Manifest:TypeTag](name: String, fn:(Rep[T1]) => Unit): Kernel = {
     val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
     val x1 = freshMut[T1](args(0))
     val y = reifyEffects(unit(fn(x1))) // unfold completely at the definition site.
     Kernel(name, List(x1), y, IndexedSeq(qualifier[T1]))
   }
 
-  override def kernel2[T1:Manifest:TypeTag, T2: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2]) => Unit): Kernel = {
+  override def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2]) => Unit): Kernel = {
     val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
     val x1 = freshMut[T1](args(0))
     val x2 = freshMut[T2](args(1))
@@ -164,7 +165,7 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
   }
 
 
-  override def kernel3[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3]) => Unit): Kernel = {
+  override def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3]) => Unit): Kernel = {
     val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
     val x1 = freshMut[T1](args(0))
     val x2 = freshMut[T2](args(1))
@@ -173,7 +174,7 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
     Kernel(name, List(x1, x2, x3), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3]))
   }
 
-  override def kernel4[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4]) => Unit): Kernel = {
+  override def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4]) => Unit): Kernel = {
     val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
     val x1 = freshMut[T1](args(0))
     val x2 = freshMut[T2](args(1))
@@ -183,7 +184,7 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
     Kernel(name, List(x1, x2, x3, x4), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4]))
   }
 
-  override def kernel5[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5]) => Unit): Kernel = {
+  override def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5]) => Unit): Kernel = {
     val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
     val x1 = freshMut[T1](args(0))
     val x2 = freshMut[T2](args(1))
@@ -194,7 +195,7 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
     Kernel(name, List(x1, x2, x3, x4, x5), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5]))
   }
 
-  override def kernel6[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6]) => Unit): Kernel = {
+  override def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6]) => Unit): Kernel = {
     val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
     val x1 = freshMut[T1](args(0))
     val x2 = freshMut[T2](args(1))
@@ -206,7 +207,7 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
     Kernel(name, List(x1, x2, x3, x4, x5, x6), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5], qualifier[T6]))
   }
 
-  override def kernel7[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7]) => Unit): Kernel = {
+  override def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7]) => Unit): Kernel = {
     val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
     val x1 = freshMut[T1](args(0))
     val x2 = freshMut[T2](args(1))
@@ -219,7 +220,7 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
     Kernel(name, List(x1, x2, x3, x4, x5, x6, x7), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5], qualifier[T6], qualifier[T7]))
   }
 
-  override def kernel8[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag](name: String)(fn: (Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8]) => Unit): Kernel = {
+  override def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8]) => Unit): Kernel = {
     val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
     val x1 = freshMut[T1](args(0))
     val x2 = freshMut[T2](args(1))
@@ -234,8 +235,37 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
   }
 
 
+  override def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag, T9: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8], Rep[T9]) => Unit): Kernel = {
+    val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
+    val x1 = freshMut[T1](args(0))
+    val x2 = freshMut[T2](args(1))
+    val x3 = freshMut[T3](args(2))
+    val x4 = freshMut[T4](args(3))
+    val x5 = freshMut[T5](args(4))
+    val x6 = freshMut[T6](args(5))
+    val x7 = freshMut[T7](args(6))
+    val x8 = freshMut[T8](args(7))
+    val x9 = freshMut[T9](args(8))
+    val y = reifyEffects(unit(fn(x1, x2, x3, x4, x5, x6, x7, x8, x9))) // unfold completely at the definition site.
+    Kernel(name, List(x1, x2, x3, x4, x5, x6, x7, x8, x9), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5], qualifier[T6], qualifier[T7], qualifier[T8], qualifier[T9]))
+  }
 
 
+  override def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag, T4: Manifest: TypeTag, T5: Manifest: TypeTag, T6: Manifest: TypeTag, T7: Manifest: TypeTag, T8: Manifest: TypeTag, T9: Manifest: TypeTag, T10: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3], Rep[T4], Rep[T5], Rep[T6], Rep[T7], Rep[T8], Rep[T9], Rep[T10]) => Unit): Kernel = {
+    val args = paranamer.lookupParameterNames(fn.getClass.getMethods.find(_.getName == "apply").get)
+    val x1 = freshMut[T1](args(0))
+    val x2 = freshMut[T2](args(1))
+    val x3 = freshMut[T3](args(2))
+    val x4 = freshMut[T4](args(3))
+    val x5 = freshMut[T5](args(4))
+    val x6 = freshMut[T6](args(5))
+    val x7 = freshMut[T7](args(6))
+    val x8 = freshMut[T8](args(7))
+    val x9 = freshMut[T9](args(8))
+    val x10 = freshMut[T10](args(9))
+    val y = reifyEffects(unit(fn(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10))) // unfold completely at the definition site.
+    Kernel(name, List(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), y, IndexedSeq(qualifier[T1], qualifier[T2], qualifier[T3], qualifier[T4], qualifier[T5], qualifier[T6], qualifier[T7], qualifier[T8], qualifier[T9], qualifier[T10]))
+  }
   // TODO UGH
   protected def qualifier[T: TypeTag]:String = {
     if(typeTag[T].tpe.baseClasses.exists(_.toString == "class Global")) "__global"

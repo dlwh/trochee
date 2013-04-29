@@ -42,6 +42,15 @@ trait ExtraBase { this: Base with Variables =>
 
   def arrays_fill[T:Manifest](x: Rep[Array[T]], length: Rep[Int], n: Rep[T])(implicit pos: SourceContext): Rep[Unit]
 
+  // equality
+  implicit class Equals(x: Rep[Any]) {
+    def ===(y: Rep[Any]) = infix_===(x, y)
+    def !==(y: Rep[Any]) = infix_!==(x, y)
+  }
+
+  def infix_===(x: Rep[Any], y: Rep[Any]):Rep[Boolean]
+  def infix_!==(x: Rep[Any], y: Rep[Any]):Rep[Boolean]
+
 
 }
 
@@ -68,5 +77,11 @@ trait ExtraBaseExp extends ExtraBase with EffectExp with VariablesExp { this: Ba
     case Reflect(e@ArrayUpdate(l,i,r), u, es) => reflectMirrored(Reflect(ArrayUpdate(f(l),f(i),f(r))(implicitly, e.pos), mapOver(f,u), f(es)))(mtype(manifest[A]))
     case _ => super.mirror(e,f)
   }).asInstanceOf[Exp[A]] // why??
+
+  case class Equals(x: Rep[Any], y: Rep[Any]) extends Def[Boolean]
+  case class NotEquals(x: Rep[Any], y: Rep[Any]) extends Def[Boolean]
+
+  def infix_===(x: Rep[Any], y: Rep[Any]):Rep[Boolean] = Equals(x, y)
+  def infix_!==(x: Rep[Any], y: Rep[Any]):Rep[Boolean] = NotEquals(x, y)
 
 }

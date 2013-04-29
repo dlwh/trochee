@@ -33,6 +33,8 @@ trait OpenCLKernelGenBase extends GenericFatCodegen with NiceNamesGen {
       case glob@GlobalId(id) => emitValDef(sym.withPos(List(glob.pos)), s"get_global_id(${quote(id)})")
       case NewVar(exp) => emitValDef(sym, quote(exp))
       case ReadVar(Variable(_sym)) => emitValDef(sym, quote(_sym))
+      case Equals(x, y) => emitValDef(sym, s"${quote(x)} == ${quote(y)}")
+      case NotEquals(x, y) => emitValDef(sym, s"${quote(x)} != ${quote(y)}")
       case _ => super.emitNode(sym, rhs)
     }
 
