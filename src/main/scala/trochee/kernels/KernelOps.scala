@@ -26,18 +26,25 @@ trait KernelOps extends ExtraBase with RingOps with OrderingOps with IfThenElse 
 //  type Constant[+T] = Rep[T with trochee.kernels.Constant]
   def workDim(implicit pos: SourceContext): Rep[Int]
   def globalSize(dim: Rep[Int])(implicit pos: SourceContext): Rep[Int]
+  def globalOffset(dim: Rep[Int])(implicit pos: SourceContext): Rep[Int]
   def globalId(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int]
 
-//  def localSize(dim: Rep[Int]):Rep[Int]
-//  def localId(dim: Rep[Int]): Rep[Int]
-//  def numGroups(dim: Rep[Int]):Rep[Int]
-//  def groupId(dim: Rep[Int]): Rep[Int]
+  def localSize(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int]
+  def localId(dim: Rep[Int])(implicit pos: SourceContext): Rep[Int]
+  def numGroups(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int]
+  def groupId(dim: Rep[Int])(implicit pos: SourceContext): Rep[Int]
+  def groupSize(dim: Rep[Int])(implicit pos: SourceContext): Rep[Int]
 
-//  def memFence(): Rep[Unit]
-
-//  def infinity: Rep[Float]
-
-//  def mad(a: Rep[Float], b: Rep[Float], c: Rep[Float]): Rep[Float]
+  def barrier(barrierType: BarrierType): Rep[Unit]
+  def readFence(barrierType: BarrierType): Rep[Unit]
+  def writeFence(barrierType: BarrierType): Rep[Unit]
+  def memFence(barrierType: BarrierType): Rep[Unit]
+  sealed trait BarrierType
+  object BarrierType {
+    case object Global extends BarrierType
+    case object Local extends BarrierType
+    case object Both extends BarrierType
+  }
 
   def kernel[T1:Manifest:TypeTag](name: String, fn:(Rep[T1]) => Unit): Kernel
   def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2]) => Unit): Kernel
@@ -134,14 +141,33 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
   }
 
 
-  def workDim(implicit pos: SourceContext) : Rep[Int] = WorkDim()
-  def globalSize(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GlobalSize(dim)(pos)
-  def globalId(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GlobalId(dim)(pos)
+  override def workDim(implicit pos: SourceContext) : Rep[Int] = WorkDim()
+  override def globalSize(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GlobalSize(dim)(pos)
+  override def globalId(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GlobalId(dim)(pos)
+  override def globalOffset(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GlobalOffset(dim)(pos)
+  override def groupSize(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GroupSize(dim)(pos)
+  override def numGroups(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = NumGroups(dim)(pos)
+  override def groupId(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = GroupId(dim)(pos)
+  override def localSize(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = LocalSize(dim)(pos)
+  override def localId(dim: Rep[Int])(implicit pos: SourceContext):Rep[Int] = LocalId(dim)(pos)
+  override def barrier(barrierType: BarrierType):Rep[Unit] = reflectEffect(Barrier(barrierType))
+  override def memFence(barrierType: BarrierType):Rep[Unit] = reflectEffect(MemFence(barrierType))
+  override def readFence(barrierType: BarrierType):Rep[Unit] = reflectEffect(ReadFence(barrierType))
+  override def writeFence(barrierType: BarrierType):Rep[Unit] = reflectEffect(WriteFence(barrierType))
 
-  case class Ignore[T]() extends Def[T]
   case class WorkDim() extends Def[Int]
   case class GlobalSize(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
   case class GlobalId(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
+  case class GlobalOffset(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
+  case class GroupSize(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
+  case class NumGroups(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
+  case class GroupId(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
+  case class LocalSize(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
+  case class LocalId(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
+  case class Barrier(barType: BarrierType) extends Def[Unit]
+  case class MemFence(barType: BarrierType) extends Def[Unit]
+  case class ReadFence(barType: BarrierType) extends Def[Unit]
+  case class WriteFence(barType: BarrierType) extends Def[Unit]
 
   private val paranamer = new AdaptiveParanamer()
 
