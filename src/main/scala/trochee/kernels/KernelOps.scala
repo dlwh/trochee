@@ -46,6 +46,8 @@ trait KernelOps extends ExtraBase with RingOps with OrderingOps with IfThenElse 
     case object Both extends BarrierType
   }
 
+  def printf(str: Rep[String], args: Rep[Any]*):Rep[Unit]
+
   def kernel[T1:Manifest:TypeTag](name: String, fn:(Rep[T1]) => Unit): Kernel
   def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2]) => Unit): Kernel
   def kernel[T1:Manifest:TypeTag, T2: Manifest: TypeTag, T3: Manifest: TypeTag](name: String, fn:(Rep[T1], Rep[T2], Rep[T3]) => Unit): Kernel
@@ -154,6 +156,7 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
   override def memFence(barrierType: BarrierType):Rep[Unit] = reflectEffect(MemFence(barrierType))
   override def readFence(barrierType: BarrierType):Rep[Unit] = reflectEffect(ReadFence(barrierType))
   override def writeFence(barrierType: BarrierType):Rep[Unit] = reflectEffect(WriteFence(barrierType))
+  override def printf(str: Rep[String], args: Rep[Any]*):Rep[Unit] = reflectEffect(Printf(str, args))
 
   case class WorkDim() extends Def[Int]
   case class GlobalSize(dim: Rep[Int])(implicit val pos: SourceContext) extends Def[Int]
@@ -168,6 +171,7 @@ trait KernelOpsExp extends KernelOps with BaseFatExp with VariablesExp with CStr
   case class MemFence(barType: BarrierType) extends Def[Unit]
   case class ReadFence(barType: BarrierType) extends Def[Unit]
   case class WriteFence(barType: BarrierType) extends Def[Unit]
+  case class Printf(str: Rep[String], args: Seq[Rep[Any]]) extends Def[Unit]
 
   private val paranamer = new AdaptiveParanamer()
 
