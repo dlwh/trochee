@@ -1,4 +1,4 @@
-package trochee.codegen
+package trochee.codegen.opencl
 
 import scala.virtualization.lms.internal.{GenerationFailedException, FatExpressions, Effects, Expressions}
 import trochee.kernels.KernelOpsExp

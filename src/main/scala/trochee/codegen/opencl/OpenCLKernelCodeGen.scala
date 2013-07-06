@@ -1,4 +1,4 @@
-package trochee.codegen
+package trochee.codegen.opencl
 
 import virtualization.lms.internal.{Effects, FatExpressions, GenericCodegen, Expressions}
 import java.io.{StringWriter, PrintWriter}

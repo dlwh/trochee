@@ -1,4 +1,4 @@
-package trochee.codegen
+package trochee.codegen.opencl
 
 import virtualization.lms.internal._
 import trochee.kernels.{KernelOpsExp, KernelOps}

@@ -1,4 +1,4 @@
-package trochee.codegen
+package trochee.codegen.opencl
 
 import virtualization.lms.common.{CLikeGenNumericOps, NumericOpsExp, ArrayOpsExp, BaseGenArrayOps}
 import virtualization.lms.internal.{FatExpressions, Effects, Expressions}
