@@ -2,17 +2,11 @@ package trochee.kernels
 
 import scala.reflect.runtime.universe._
 import virtualization.lms.common._
-import virtualization.lms.internal.{FatExpressions, Effects, Expressions}
-import reflect.{SourceContext, ClassTag}
-import trochee.codegen.{OpenCLKernelGenArrayOps, OpenCLKernelGenNumericOps, OpenCLKernelCodegen}
+import reflect.SourceContext
 import trochee.util.CStructExp
 import trochee.basic._
-import spire.algebra._
-import spire.implicits._
-import spire.syntax._
-import spire.math._
 import scala.collection.mutable.ArrayBuffer
-import com.thoughtworks.paranamer.{AdaptiveParanamer, CachingParanamer}
+import com.thoughtworks.paranamer.AdaptiveParanamer
 import java.util
 
 /**

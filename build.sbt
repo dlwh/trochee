@@ -13,7 +13,7 @@ version := "0.1-SNAPSHOT"
 
 libraryDependencies += "EPFL" % "lms_2.10.0" % "0.3-SNAPSHOT"
 
-libraryDependencies += "org.spire-math" %% "spire" % "0.3.0"
+libraryDependencies += "org.scalanlp" %% "breeze-math" % "0.4-SNAPSHOT"
 
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.0.M5b" % "test"
