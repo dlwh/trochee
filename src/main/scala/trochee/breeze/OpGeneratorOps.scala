@@ -1,4 +1,4 @@
-package trochee.codegen.breeze
+package trochee.breeze
 
 import trochee.basic.ExtraBase
 import scala.virtualization.lms.common._
@@ -55,7 +55,7 @@ trait OpGeneratorOps { this: Base with ExtraBase with NumericOps =>
 
 }
 
-trait DenseVectorBuilderOps extends OpGeneratorOps { this: Base with ExtraBase with NumericOps with RangeOps with Variables =>
+trait DenseVectorBuilderOps extends OpGeneratorOps with DenseVectorOps { this: Base with ExtraBase with NumericOps with RangeOps with Variables =>
 
   def denseVectorHelper[L:Manifest, R:Manifest, Res:Manifest] = new VectorOpHelper[DenseVector, L, DenseVector, R, DenseVector[Res], Res] {
     def name: String = "DV_DV_DV"
@@ -86,11 +86,7 @@ trait DenseVectorBuilderOps extends OpGeneratorOps { this: Base with ExtraBase w
     def intersected(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorBuilder[L, R, DenseVector[Res], Res] = ???
   }
 
-  def infix_data[T](data: Rep[DenseVector[T]]):Rep[Array[T]]
-  def infix_length[T](data: Rep[DenseVector[T]]):Rep[Int]
-  def infix_stride[T](data: Rep[DenseVector[T]]):Rep[Int]
-  def infix_offset[T](data: Rep[DenseVector[T]]):Rep[Int]
-  def newDenseVector[T:Manifest](length: Rep[Int]):Rep[DenseVector[T]]
+
 
 
 }
