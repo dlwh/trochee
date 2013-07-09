@@ -39,6 +39,8 @@ trait NiceNamesGen extends GenericFatCodegen {
   }
 
 
+
+
   var tabWidth: Int = 0
   def addTab() = "  " * tabWidth
 

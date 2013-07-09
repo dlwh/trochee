@@ -2,7 +2,10 @@ package trochee.breeze
 
 import trochee.basic.ExtraBase
 import scala.virtualization.lms.common._
+import scala.virtualization.lms.internal._
 import breeze.linalg.DenseVector
+import breeze.math.Semiring
+import scala.reflect.SourceContext
 
 
 /**
@@ -55,28 +58,28 @@ trait OpGeneratorOps { this: Base with ExtraBase with NumericOps =>
 
 }
 
-trait DenseVectorBuilderOps extends OpGeneratorOps with DenseVectorOps { this: Base with ExtraBase with NumericOps with RangeOps with Variables =>
+trait DenseVectorBuilderOps extends OpGeneratorOps with DenseVectorOps { this: Base with ExtraBase with NumericOps with RangeOps with Variables with Effects with LiftVariables =>
 
-  def denseVectorHelper[L:Manifest, R:Manifest, Res:Manifest] = new VectorOpHelper[DenseVector, L, DenseVector, R, DenseVector[Res], Res] {
+  def denseVectorHelper[L:Manifest, R:Manifest, Res:Manifest:Semiring] = new VectorOpHelper[DenseVector, L, DenseVector, R, DenseVector[Res], Res] {
     def name: String = "DV_DV_DV"
 
     def fullRange(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorBuilder[L, R, DenseVector[Res], Res] = {
       new VectorBuilder[L, R, DenseVector[Res], Res] {
         def map(f: (Rep[L], Rep[R]) => Rep[Res]): Rep[DenseVector[Res]] = {
-          val dv: Rep[DenseVector[Res]] = newDenseVector[Res](lhs.length)
+          val dv: Rep[DenseVector[Res]] = repDenseVector.zeros[Res](lhs.length)
           val dataRes = dv.data
           val ldata = lhs.data
           val rdata = rhs.data
           var loff = lhs.offset
           var roff = rhs.offset
-          var lstride = lhs.stride
-          var rstride = rhs.stride
+          val lstride = lhs.stride
+          val rstride = rhs.stride
           for(i <- unit(0) until dv.length) {
             dataRes(i) = f(ldata(loff), rdata(roff))
-            loff += lstride
-            roff += rstride
+            loff = loff + lstride
+            roff = roff + rstride
           }
-          dv
+          return dv
         }
       }
     }
