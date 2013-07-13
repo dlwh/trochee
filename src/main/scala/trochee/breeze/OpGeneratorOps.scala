@@ -5,7 +5,9 @@ import scala.virtualization.lms.common._
 import scala.virtualization.lms.internal._
 import breeze.linalg.DenseVector
 import breeze.math.Semiring
-import scala.reflect.SourceContext
+import breeze.linalg.operators._
+import scala.reflect.runtime._
+import universe._
 
 
 /**
@@ -15,7 +17,7 @@ import scala.reflect.SourceContext
  **/
 trait OpGeneratorOps { this: Base with ExtraBase with NumericOps =>
 
-  case class Operator[LHS, RHS, Result](name: String,
+  case class Operator[LHS, RHS, Result](op: OpType,
                                         zeroIsNilpotent: Boolean = false,
                                         zeroIsIdempotent: Boolean = false,
                                         rhsZeroIsIdempotent: Boolean = false,
@@ -24,35 +26,54 @@ trait OpGeneratorOps { this: Base with ExtraBase with NumericOps =>
     def apply(lhs: Rep[LHS], rhs: Rep[RHS]):Rep[Result] = fn(lhs, rhs)
   }
 
-  trait VectorOpHelper[LHS[_], LHSV,
-                       RHS[_], RHSV,
+  trait VectorOpHelper[LHS, LHSV,
+                       RHS, RHSV,
                        Result, ResultV] {
     def name: String
-    def intersected(lhs: Rep[LHS[LHSV]], rhs: Rep[RHS[RHSV]]):VectorBuilder[LHSV, RHSV, Result, ResultV]
-    def union(lhs: Rep[LHS[LHSV]], rhs: Rep[RHS[RHSV]]): VectorBuilder[LHSV, RHSV, Result, ResultV]
-    def fullRange(lhs: Rep[LHS[LHSV]], rhs: Rep[RHS[RHSV]]): VectorBuilder[LHSV, RHSV, Result, ResultV]
+    def intersected(lhs: Rep[LHS], rhs: Rep[RHS]):VectorBuilder[LHSV, RHSV, Result, ResultV]
+    def union(lhs: Rep[LHS], rhs: Rep[RHS]): VectorBuilder[LHSV, RHSV, Result, ResultV]
+    def fullRange(lhs: Rep[LHS], rhs: Rep[RHS]): VectorBuilder[LHSV, RHSV, Result, ResultV]
   }
 
   trait VectorBuilder[LHS, RHS, Result, ResultV] {
     def map(f: (Rep[LHS], Rep[RHS]) => Rep[ResultV]):Rep[Result]
   }
 
-  def vectorBinaryOp[LHS[_], LHSV,
-                     RHS[_], RHSV,
-                     Result, ResultV](helper: VectorOpHelper[LHS, LHSV, RHS, RHSV, Result, ResultV],
-                                         op: Operator[LHSV, RHSV, ResultV]) = { (lhs: Rep[LHS[LHSV]], rhs: Rep[RHS[RHSV]]) =>
+  case class VectorBinaryOperator[LHS, RHS, Result](lhs: Type, op: OpType, rhs: Type, result: Type)(val body: (Rep[LHS],Rep[RHS])=>Rep[Result]) {
+    def generatedName = s"${mkAbbreviation(lhs)}_${mkAbbreviation(rhs)}_${op.getClass.getSimpleName.replaceAll("[$]","")}_${mkAbbreviation(result)}"
+  }
+
+  def mkAbbreviation[T](implicit tag: Type):String = {
+    tag match {
+      case TypeRef(_, nme, args) =>
+        val prefix = nme.toString.filter(c => c.isLetter && c.isUpper)
+        if(args.isEmpty) prefix
+        else args.mkString(prefix +"_", "_", "")
+    }
+  }
+
+  def vectorBinaryOp[LHS:TypeTag, LHSV:TypeTag,
+                     RHS:TypeTag, RHSV:TypeTag,
+                     Result:TypeTag, ResultV:TypeTag](helper: VectorOpHelper[LHS, LHSV, RHS, RHSV, Result, ResultV],
+                                      op: Operator[LHSV, RHSV, ResultV]):VectorBinaryOperator[LHS, RHS, Result] =  {
+
+    val body = { (lhs: Rep[LHS], rhs: Rep[RHS]) =>
       val zipped = {
         if(op.zeroIsNilpotent) helper.intersected(lhs, rhs)
         else if(op.zeroIsIdempotent) helper.union(lhs, rhs)
         else helper.fullRange(lhs, rhs)
       }
       zipped map {op(_, _)}
+    }
+
+
+    VectorBinaryOperator(typeOf[LHS], op.op, typeOf[RHS], typeOf[Result])(body)
   }
 
-  def opAdd[T:Manifest:Numeric] = Operator[T, T, T]("OpAdd", zeroIsIdempotent = true)({_ + _})
-  def opSub[T:Manifest:Numeric] = Operator[T, T, T]("OpSub", rhsZeroIsIdempotent = true)({_ - _})
-  def opMulScalar[T:Manifest:Numeric] = Operator[T, T, T]("OpMulScalar", zeroIsNilpotent = true)({_ * _})
-  def opDiv[T:Manifest:Numeric] = Operator[T, T, T]("OpDiv", lhsZeroIsNilpotent = true)({_ / _})
+  def opAdd[T:Manifest:Numeric] = Operator[T, T, T](OpAdd, zeroIsIdempotent = true)({_ + _})
+  def opSub[T:Manifest:Numeric] = Operator[T, T, T](OpSub, rhsZeroIsIdempotent = true)({_ - _})
+  def opMulScalar[T:Manifest:Numeric] = Operator[T, T, T](OpMulScalar, zeroIsNilpotent = true)({_ * _})
+  def opDiv[T:Manifest:Numeric] = Operator[T, T, T](OpDiv, lhsZeroIsNilpotent = true)({_ / _})
   //def opMod[T:Manifest:Numeric] = Operator[T, T, T]("OpMod", lhsZeroIsNilpotent = true)({_ % _})
 
 
@@ -60,7 +81,7 @@ trait OpGeneratorOps { this: Base with ExtraBase with NumericOps =>
 
 trait DenseVectorBuilderOps extends OpGeneratorOps with DenseVectorOps { this: Base with ExtraBase with NumericOps with RangeOps with Variables with Effects with LiftVariables =>
 
-  def denseVectorHelper[L:Manifest, R:Manifest, Res:Manifest:Semiring] = new VectorOpHelper[DenseVector, L, DenseVector, R, DenseVector[Res], Res] {
+  def denseVectorHelper[L:Manifest, R:Manifest, Res:Manifest:Semiring] = new VectorOpHelper[DenseVector[L], L, DenseVector[R], R, DenseVector[Res], Res] {
     def name: String = "DV_DV_DV"
 
     def fullRange(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorBuilder[L, R, DenseVector[Res], Res] = {
@@ -86,7 +107,7 @@ trait DenseVectorBuilderOps extends OpGeneratorOps with DenseVectorOps { this: B
 
     def union(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorBuilder[L, R, DenseVector[Res], Res] = fullRange(lhs, rhs)
 
-    def intersected(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorBuilder[L, R, DenseVector[Res], Res] = ???
+    def intersected(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorBuilder[L, R, DenseVector[Res], Res] = fullRange(lhs, rhs)
   }
 
 

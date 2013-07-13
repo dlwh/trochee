@@ -5,6 +5,7 @@ import scala.virtualization.lms.common._
 import scala.virtualization.lms.internal._
 import trochee.util.NiceNamesGen
 import java.io._
+import breeze.linalg._
 import breeze.linalg.operators._
 import trochee.breeze.{DenseVectorOpsExp, DenseVectorBuilderOps, OpGeneratorOps}
 import com.thoughtworks.paranamer.AdaptiveParanamer
@@ -37,9 +38,9 @@ abstract class GenOperators extends GenericCodegen with ScalaFatCodegen  with Ni
     case _ => super.quote(x)
   }
 
-  def genBinaryOp[LHS: Manifest, RHS: Manifest, Result: Manifest](name:String, op: OpType)(body: (Rep[LHS], Rep[RHS])=>Rep[Result]) = {
-
-
+  def genBinaryOp[LHS: Manifest, RHS: Manifest, Result: Manifest](op: VectorBinaryOperator[LHS, RHS, Result]) = {
+    val name = op.generatedName
+    import op.body
     val args = paranamer.lookupParameterNames(body.getClass.getMethods.find(_.getName == "apply").get)
     val lhs = freshMut[LHS](args(0))
     val rhs = freshMut[RHS](args(1))
@@ -53,7 +54,7 @@ abstract class GenOperators extends GenericCodegen with ScalaFatCodegen  with Ni
     val sout = new StringWriter
     val out = new PrintWriter(sout)
 
-    val opType = op.getClass.getName.replaceAll("[$]", "") // usually an object with the same name as class type
+    val opType = op.op.getClass.getName.replaceAll("[$]", "") // usually an object with the same name as class type
     withStream(out) {
       out.println(s"${addTab}implicit object $name extends BinaryOp[$lhsType, $rhsType, $opType, $resType] {")
       tabWidth += 1
@@ -102,7 +103,9 @@ object MakeOperators {
     }
     import xIR._
 
-    println(gen.genBinaryOp("DV_DV_DV_OpAdd", OpAdd)(vectorBinaryOp(denseVectorHelper[Double, Double, Double], opAdd[Double])))
+    for(x <- List(opAdd[Double], opMulScalar[Double], opSub[Double], opDiv[Double])) 
+      println(gen.genBinaryOp(vectorBinaryOp(denseVectorHelper[Double, Double, Double], x)))
 
   }
+
 }
