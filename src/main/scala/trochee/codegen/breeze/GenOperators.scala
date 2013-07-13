@@ -103,8 +103,10 @@ object MakeOperators {
     }
     import xIR._
 
-    for(x <- List(opAdd[Double], opMulScalar[Double], opSub[Double], opDiv[Double])) 
+    for(x <- List(opAdd[Double], opMulScalar[Double], opSub[Double], opDiv[Double]))  {
       println(gen.genBinaryOp(vectorBinaryOp(denseVectorHelper[Double, Double, Double], x)))
+      println(gen.genBinaryOp(vectorBinaryOp(denseVectorScalarHelper[Double, Double, Double], x)))
+    }
 
   }
 
