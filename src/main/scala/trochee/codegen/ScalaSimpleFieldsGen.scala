@@ -12,7 +12,7 @@ import scala.virtualization.lms.common.BaseExp
  **/
 trait ScalaSimpleFieldsGen extends ScalaFatCodegen with NiceNamesGen {
 
-  override val IR: ExtraBaseExp with scala.virtualization.lms.internal.Expressions with scala.virtualization.lms.internal.Effects with scala.virtualization.lms.internal.FatExpressions with SimpleFieldsExp
+  override val IR: ExtraBaseExp with Expressions with Effects with FatExpressions with ExtraBaseExp with SimpleFieldsExp
 
   import IR._
 
@@ -23,6 +23,8 @@ trait ScalaSimpleFieldsGen extends ScalaFatCodegen with NiceNamesGen {
     case a@StaticMethodInvocation(name, meth, targs, args@_*) => emitValDef(addPos(sym, a), s"$name.$meth${targs.mkString("[", ", ", "]")}(${args.map(quote _).mkString(", ")})")
     case a@ArrayApply(x,n) => emitValDef(addPos(sym, a), "" + quote(x) + "(" + quote(n) + ")")
     case a@ArrayUpdate(x,n,y) => emitValDef(addPos(sym, a), quote(x) + "(" + quote(n) + ") = " + quote(y))
+    case a@Equals(x,y) => emitValDef(sym, s"${quote(x)} == ${quote(y)}")
+    case a@NotEquals(x,y) => emitValDef(sym, s"${quote(x)} != ${quote(y)}")
     case _ => super.emitNode(sym, rhs)
   }
 

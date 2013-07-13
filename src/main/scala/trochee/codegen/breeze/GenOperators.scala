@@ -127,17 +127,22 @@ abstract class GenOperators extends GenericCodegen with ScalaFatCodegen  with Ni
 
 object MakeOperators {
   def main(args: Array[String]) = {
-    val xIR = new BaseExp with ExtraBaseExp with DenseVectorBuilderOps with NumericOpsExp with RangeOpsExp with DenseVectorOpsExp with trochee.basic.SimpleFieldsExp with LiftVariables
-    val gen = new GenOperators with ScalaSimpleFieldsGen with ScalaGenRangeOps with ScalaGenNumericOps  with ScalaGenVariables {
+    val xIR = new BaseExp with ExtraBaseExp with DenseVectorBuilderOps with NumericOpsExp with OrderingOpsExp with RangeOpsExp with DenseVectorOpsExp with trochee.basic.SimpleFieldsExp with LiftVariables
+    val gen = new GenOperators with ScalaSimpleFieldsGen with ScalaGenRangeOps with ScalaGenNumericOps  with ScalaGenVariables with ScalaGenOrderingOps {
       val IR: xIR.type = xIR
     }
     import xIR._
 
-    for(x <- List(opAdd[Double], opMulScalar[Double], opSub[Double], opDiv[Double]))  {
+    for(x <- numericalOps[Double]) {
       println(gen.genBinaryOp(vectorBinaryOp(denseVectorHelper[Double, Double, Double], x)))
       println(gen.genBinaryOp(vectorBinaryOp(denseVectorScalarHelper[Double, Double, Double], x)))
       println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(denseVectorTransformer[Double, Double], x)))
       println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(denseVectorScalarTransformer[Double, Double], x)))
+    }
+
+    for(x <- orderingOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(denseVectorHelper[Double, Double, Boolean], x)))
+      println(gen.genBinaryOp(vectorBinaryOp(denseVectorScalarHelper[Double, Double, Boolean], x)))
     }
 
   }
