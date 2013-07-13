@@ -32,14 +32,29 @@ trait OpGeneratorOps { this: Base with ExtraBase with NumericOps =>
     def intersected(lhs: Rep[LHS], rhs: Rep[RHS]):VectorBuilder[LHSV, RHSV, Result, ResultV]
     def union(lhs: Rep[LHS], rhs: Rep[RHS]): VectorBuilder[LHSV, RHSV, Result, ResultV]
     def fullRange(lhs: Rep[LHS], rhs: Rep[RHS]): VectorBuilder[LHSV, RHSV, Result, ResultV]
+
+  }
+
+  trait VectorTransformHelper[LHS, LHSV, RHS, RHSV] {
+    def intersected(lhs: Rep[LHS], rhs: Rep[RHS]):VectorUpdater[LHSV, RHSV]
+    def union(lhs: Rep[LHS], rhs: Rep[RHS]): VectorUpdater[LHSV, RHSV]
+    def fullRange(lhs: Rep[LHS], rhs: Rep[RHS]): VectorUpdater[LHSV, RHSV]
   }
 
   trait VectorBuilder[LHS, RHS, Result, ResultV] {
     def map(f: (Rep[LHS], Rep[RHS]) => Rep[ResultV]):Rep[Result]
   }
 
+  trait VectorUpdater[LHS, RHS] {
+    def updateLHS(f: (Rep[LHS], Rep[RHS]) => Rep[LHS]):Rep[Unit]
+  }
+
   case class VectorBinaryOperator[LHS, RHS, Result](lhs: Type, op: OpType, rhs: Type, result: Type)(val body: (Rep[LHS],Rep[RHS])=>Rep[Result]) {
     def generatedName = s"${mkAbbreviation(lhs)}_${mkAbbreviation(rhs)}_${op.getClass.getSimpleName.replaceAll("[$]","")}_${mkAbbreviation(result)}"
+  }
+
+  case class VectorBinaryUpdateOperator[LHS, RHS](lhs: Type, op: OpType, rhs: Type)(val body: (Rep[LHS],Rep[RHS])=>Rep[Unit]) {
+    def generatedName = s"${mkAbbreviation(lhs)}_${mkAbbreviation(rhs)}_${op.getClass.getSimpleName.replaceAll("[$]","")}Into"
   }
 
   def mkAbbreviation[T](implicit tag: Type):String = {
@@ -67,6 +82,22 @@ trait OpGeneratorOps { this: Base with ExtraBase with NumericOps =>
 
 
     VectorBinaryOperator(typeOf[LHS], op.op, typeOf[RHS], typeOf[Result])(body)
+  }
+
+  def vectorBinaryUpdateOp[LHS:TypeTag, LHSV:TypeTag, RHS:TypeTag, RHSV:TypeTag](helper: VectorTransformHelper[LHS, LHSV, RHS, RHSV],
+                                   op: Operator[LHSV, RHSV, LHSV]):VectorBinaryUpdateOperator[LHS, RHS] =  {
+
+    val body = { (lhs: Rep[LHS], rhs: Rep[RHS]) =>
+      val zipped = {
+        if(op.zeroIsNilpotent) helper.intersected(lhs, rhs)
+        else if(op.zeroIsIdempotent) helper.union(lhs, rhs)
+        else helper.fullRange(lhs, rhs)
+      }
+      zipped updateLHS  {op(_, _)}
+    }
+
+
+    VectorBinaryUpdateOperator(typeOf[LHS], op.op, typeOf[RHS])(body)
   }
 
   def opAdd[T:Manifest:Numeric] = Operator[T, T, T](OpAdd, zeroIsIdempotent = true)({_ + _})
@@ -132,6 +163,52 @@ trait DenseVectorBuilderOps extends OpGeneratorOps with DenseVectorOps { this: B
     def intersected(lhs: Rep[DenseVector[L]], rhs: Rep[R]): VectorBuilder[L, R, DenseVector[Res], Res] = fullRange(lhs, rhs)
   }
 
+
+  def denseVectorTransformer[L:Manifest, R:Manifest] = new VectorTransformHelper[DenseVector[L], L, DenseVector[R], R] {
+
+    def fullRange(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorUpdater[L, R] = {
+      new VectorUpdater[L, R] {
+        def updateLHS(f: (Rep[L], Rep[R]) => Rep[L]): Rep[Unit] = {
+          val ldata = lhs.data
+          val rdata = rhs.data
+          var loff = lhs.offset
+          var roff = rhs.offset
+          val lstride = lhs.stride
+          val rstride = rhs.stride
+          for(i <- unit(0) until lhs.length) {
+            ldata(loff) = f(ldata(loff), rdata(roff))
+            loff = loff + lstride
+            roff = roff + rstride
+          }
+        }
+      }
+    }
+
+    def union(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorUpdater[L, R] = fullRange(lhs, rhs)
+
+    def intersected(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorUpdater[L, R] = fullRange(lhs, rhs)
+  }
+
+  def denseVectorScalarTransformer[L:Manifest, R:Manifest] = new VectorTransformHelper[DenseVector[L], L, R, R] {
+
+    def fullRange(lhs: Rep[DenseVector[L]], rhs: Rep[R]): VectorUpdater[L, R] = {
+      new VectorUpdater[L, R] {
+        def updateLHS(f: (Rep[L], Rep[R]) => Rep[L]) = {
+          val ldata = lhs.data
+          var loff = lhs.offset
+          val lstride = lhs.stride
+          for(i <- unit(0) until lhs.length) {
+            ldata(loff) = f(ldata(loff), rhs)
+            loff = loff + lstride
+          }
+        }
+      }
+    }
+
+    def union(lhs: Rep[DenseVector[L]], rhs: Rep[R]): VectorUpdater[L, R] = fullRange(lhs, rhs)
+
+    def intersected(lhs: Rep[DenseVector[L]], rhs: Rep[R]): VectorUpdater[L, R] = fullRange(lhs, rhs)
+  }
 
 
 
