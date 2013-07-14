@@ -1,8 +1,8 @@
 package trochee.breeze
 
 import breeze.linalg.DenseVector
-import scala.virtualization.lms.common.{BaseExp, Base}
-import trochee.basic.SimpleFieldsExp
+import scala.virtualization.lms.common._
+import trochee.basic.{ExtraBase, SimpleFieldsExp}
 import scala.reflect.SourceContext
 import breeze.math.Semiring
 import scala.virtualization.lms.internal.Effects
@@ -15,11 +15,11 @@ import scala.virtualization.lms.internal.Effects
 trait DenseVectorOps { this : Base =>
 
   implicit class enrichDV[T:Manifest](vv: Rep[DenseVector[T]]) {
-  def data(implicit pos: SourceContext):Rep[Array[T]] = enrichDV_data(vv)(implicitly, pos)
-  def length(implicit pos: SourceContext):Rep[Int] = enrichDV_length(vv)(implicitly, pos)
-  def stride(implicit pos: SourceContext):Rep[Int] = enrichDV_stride(vv)(implicitly, pos)
-  def offset(implicit pos: SourceContext):Rep[Int] = enrichDV_offset(vv)(implicitly, pos)
-    
+    def data(implicit pos: SourceContext):Rep[Array[T]] = enrichDV_data(vv)(implicitly, pos)
+    def length(implicit pos: SourceContext):Rep[Int] = enrichDV_length(vv)(implicitly, pos)
+    def stride(implicit pos: SourceContext):Rep[Int] = enrichDV_stride(vv)(implicitly, pos)
+    def offset(implicit pos: SourceContext):Rep[Int] = enrichDV_offset(vv)(implicitly, pos)
+
   }
 
   def enrichDV_data[T:Manifest](dv: Rep[DenseVector[T]])(implicit pos: SourceContext):Rep[Array[T]]
@@ -48,3 +48,7 @@ trait DenseVectorOpsExp extends DenseVectorOps { this : BaseExp with SimpleField
   def newDenseVector[T:Manifest](length: Rep[Int])(implicit pos: SourceContext):Rep[DenseVector[T]] = NewObject[DenseVector[T]](length)(implicitly, pos)
   def repDenseVector_zeros[T:Manifest:Semiring](len: Rep[Int])(implicit pos: SourceContext):Rep[DenseVector[T]] = StaticMethodInvocation[DenseVector[T]]("breeze.linalg.DenseVector", "zeros", IndexedSeq(manifest[T]), len)(implicitly, pos)
 }
+
+
+
+
