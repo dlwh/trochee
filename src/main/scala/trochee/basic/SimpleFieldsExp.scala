@@ -11,6 +11,7 @@ import scala.virtualization.lms.internal.Expressions
  **/
 trait SimpleFieldsExp extends BaseExp with Expressions {
   case class FieldDeref[T:Manifest, R:Manifest](v: Rep[T], fieldName: String)(implicit val pos: SourceContext) extends Def[R]
+  case class MethodInvocation[T:Manifest, R:Manifest](v: Rep[T], methodName: String, args: Rep[Any]*)(implicit val pos: SourceContext) extends Def[R]
   case class NewObject[T:Manifest](args: Rep[Any]*)(implicit val pos: SourceContext) extends Def[T] {
     def tp = implicitly[Manifest[T]]
   }

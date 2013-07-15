@@ -19,6 +19,8 @@ trait ScalaSimpleFieldsGen extends ScalaFatCodegen with NiceNamesGen {
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
     case a@IR.FieldDeref(v, name) => emitValDef(addPos(sym, a), s"${quote(v)}.$name")
     case a@NewObject(args@_*) => emitValDef(addPos(sym, a), s"new ${a.tp}(${args.map(quote _).mkString(", ")})")
+    case a@MethodInvocation(name, "apply", args@_*) => emitValDef(addPos(sym, a), s"${quote(name)}(${args.map(quote _).mkString(", ")})")
+    case a@MethodInvocation(name, meth, args@_*) => emitValDef(addPos(sym, a), s"${quote(name)}.$meth(${args.map(quote _).mkString(", ")})")
     case a@StaticMethodInvocation(name, meth, IndexedSeq(), args@_*) => emitValDef(addPos(sym, a), s"$name.$meth(${args.map(quote _).mkString(", ")})")
     case a@StaticMethodInvocation(name, meth, targs, args@_*) => emitValDef(addPos(sym, a), s"$name.$meth${targs.mkString("[", ", ", "]")}(${args.map(quote _).mkString(", ")})")
     case a@ArrayApply(x,n) => emitValDef(addPos(sym, a), "" + quote(x) + "(" + quote(n) + ")")

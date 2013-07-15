@@ -38,9 +38,14 @@ trait ExtraBase { this: Base with Variables =>
     def fill[T: Manifest](arr: Rep[Array[T]], length: Rep[Int], value: Rep[T])(implicit pos: SourceContext):Rep[Unit] = {
       arrays_fill(arr, length, value)(implicitly, pos)
     }
+
+    def binarySearch[T: Manifest: Ordering](arr: Rep[Array[T]], from: Rep[Int], to: Rep[Int], value: Rep[T])(implicit pos: SourceContext):Rep[Int] = {
+      arrays_binarySearch(arr, from, to, value)(implicitly, implicitly, pos)
+    }
   }
 
   def arrays_fill[T:Manifest](x: Rep[Array[T]], length: Rep[Int], n: Rep[T])(implicit pos: SourceContext): Rep[Unit]
+  def arrays_binarySearch[T: Manifest: Ordering](arr: Rep[Array[T]], from: Rep[Int], to: Rep[Int], value: Rep[T])(implicit pos: SourceContext):Rep[Int]
 
   // equality
   implicit class Equals(x: Rep[Any]) {
@@ -51,10 +56,21 @@ trait ExtraBase { this: Base with Variables =>
   def infix_===(x: Rep[Any], y: Rep[Any]):Rep[Boolean]
   def infix_!==(x: Rep[Any], y: Rep[Any]):Rep[Boolean]
 
+  // boolean silliness
+  /*
+  implicit class BooleanOps(x: Rep[Boolean]) {
+    def &&(y: Rep[Boolean]) = my_infix_&&(x, y)
+    def ||(y: Rep[Boolean]) = my_infix_||(x, y)
+  }
+
+  def my_infix_&&(x: Rep[Boolean], y: Rep[Boolean]):Rep[Boolean]
+  def my_infix_||(x: Rep[Boolean], y: Rep[Boolean]):Rep[Boolean]
+  */
+
 
 }
 
-trait ExtraBaseExp extends ExtraBase with EffectExp with VariablesExp { this: BaseExp with Variables =>
+trait ExtraBaseExp extends ExtraBase with EffectExp with VariablesExp with BooleanOpsExp with SimpleFieldsExp { this: BaseExp with Variables =>
   case class ArrayNew[T:Manifest](n: Exp[Int])(implicit val pos: SourceContext) extends Def[Array[T]] {
     val m = manifest[T]
   }
@@ -66,6 +82,12 @@ trait ExtraBaseExp extends ExtraBase with EffectExp with VariablesExp { this: Ba
 
   def array_update[T: Manifest](x: Rep[Array[T]], n: Rep[Int], y: Rep[T])(implicit pos: SourceContext): Rep[Unit] = {
     reflectWrite(x)(ArrayUpdate(x,n,y)(implicitly, pos))
+  }
+
+
+  def arrays_binarySearch[T: Manifest : Ordering](arr: Rep[Array[T]], from: Rep[Int], to: Rep[Int], value: Rep[T])(implicit pos: SourceContext): Rep[Int] = {
+    StaticMethodInvocation[Int]("java.util.Arrays", "binarySearch", IndexedSeq.empty, arr, from, to, value)(implicitly, pos)
+
   }
 
   def arrays_fill[T: Manifest](x: Rep[Array[T]], length: Rep[Int], n: Rep[T])(implicit pos: SourceContext): Rep[Unit] = ???

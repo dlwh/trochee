@@ -108,10 +108,6 @@ trait OpGeneratorOps { this: Base with ExtraBase with NumericOps with OrderingOp
   def opEq[T:Manifest:Ordering] = Operator[T, T, Boolean](OpEq)({_ === _})
   def opNe[T:Manifest:Ordering] = Operator[T, T, Boolean](OpNe)({_ !== _})
 
-
-
-
-
   protected def mkAbbreviation[T](implicit tag: Type):String = {
     tag match {
       case TypeRef(_, name, args) =>

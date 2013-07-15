@@ -7,7 +7,7 @@ import trochee.util.NiceNamesGen
 import java.io._
 import breeze.linalg._
 import breeze.linalg.operators._
-import trochee.breeze.{DenseVectorOpsExp, DenseVectorBuilderOps, OpGeneratorOps}
+import trochee.breeze._
 import com.thoughtworks.paranamer.AdaptiveParanamer
 import trochee.codegen.ScalaSimpleFieldsGen
 import java.util
@@ -127,8 +127,8 @@ abstract class GenOperators extends GenericCodegen with ScalaFatCodegen  with Ni
 
 object MakeOperators {
   def main(args: Array[String]) = {
-    val xIR = new BaseExp with ExtraBaseExp with DenseVectorBuilderOps with NumericOpsExp with OrderingOpsExp with RangeOpsExp with DenseVectorOpsExp with trochee.basic.SimpleFieldsExp with LiftVariables
-    val gen = new GenOperators with ScalaSimpleFieldsGen with ScalaGenRangeOps with ScalaGenNumericOps  with ScalaGenVariables with ScalaGenOrderingOps {
+    val xIR = new BaseExp with ExtraBaseExp with DenseVectorBuilderOps with NumericOpsExp with OrderingOpsExp with RangeOpsExp with DenseVectorOpsExp with trochee.basic.SimpleFieldsExp with LiftVariables with SparseVectorBuilderOps with SparseVectorOpsExp with IfThenElseExp with WhileExp with PrimitiveOpsExp
+    val gen = new GenOperators with ScalaSimpleFieldsGen with ScalaGenRangeOps with ScalaGenNumericOps  with ScalaGenVariables with ScalaGenOrderingOps with ScalaGenWhile with ScalaGenBooleanOps with ScalaGenIfThenElse with ScalaGenPrimitiveOps {
       val IR: xIR.type = xIR
     }
     import xIR._
@@ -143,6 +143,20 @@ object MakeOperators {
     for(x <- orderingOps[Double]) {
       println(gen.genBinaryOp(vectorBinaryOp(denseVectorHelper[Double, Double, Boolean], x)))
       println(gen.genBinaryOp(vectorBinaryOp(denseVectorScalarHelper[Double, Double, Boolean], x)))
+    }
+
+    println("Sparse")
+
+    for(x <- numericalOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorHelper[Double, Double, Double], x)))
+      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorScalarHelper[Double, Double, Double], x)))
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(sparseVectorTransformer[Double, Double], x)))
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(sparseVectorScalarTransformer[Double, Double], x)))
+    }
+
+    for(x <- orderingOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorHelper[Double, Double, Boolean], x)))
+      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorScalarHelper[Double, Double, Boolean], x)))
     }
 
   }

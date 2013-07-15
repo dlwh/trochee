@@ -22,8 +22,9 @@ trait OpenCLKernelGenBase extends GenericFatCodegen with NiceNamesGen {
     } else{
       super.quote(x)
     }
-    case FieldDeref(sym, field) => preferNoLocal(sym)+"." +field
-    case FieldPointerDeref(sym, field) => preferNoLocal(sym)+"->" +field
+
+    case CFieldDeref(sym, field) => preferNoLocal(sym)+"." +field
+    case CFieldPointerDeref(sym, field) => preferNoLocal(sym)+"->" +field
     case _ => super.quote(x)
 
   }
