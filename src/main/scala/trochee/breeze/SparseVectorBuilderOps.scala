@@ -13,7 +13,7 @@ import scala.virtualization.lms.internal.Effects
  **/
 trait SparseVectorBuilderOps extends OpGeneratorOps with SparseVectorOps with BooleanOps { this: Base with ExtraBase with NumericOps with OrderingOps with RangeOps with Variables with Effects with LiftVariables with While with IfThenElse with PrimitiveOps =>
 
-  def sparseVectorHelper[L:Manifest, R:Manifest, Res:Manifest:Semiring] = new VectorOpHelper[SparseVector[L], L, SparseVector[R], R, SparseVector[Res], Res] {
+  def sparseVectorHelper[L:Manifest:Semiring, R:Manifest:Semiring, Res:Manifest:Semiring] = new VectorOpHelper[SparseVector[L], L, SparseVector[R], R, SparseVector[Res], Res] {
 
     def fullRange(lhs: Rep[SparseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, SparseVector[Res], Res] = {
       new VectorBuilder[L, R, SparseVector[Res], Res] {
@@ -27,18 +27,49 @@ trait SparseVectorBuilderOps extends OpGeneratorOps with SparseVectorOps with Bo
       }
     }
 
-    def union(lhs: Rep[SparseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, SparseVector[Res], Res] = fullRange(lhs, rhs)
-
-    def intersected(lhs: Rep[SparseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, SparseVector[Res], Res] = {
+    def union(lhs: Rep[SparseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, SparseVector[Res], Res] = {
+      val lzero = unit(implicitly[Semiring[L]].zero)
+      val rzero = unit(implicitly[Semiring[R]].zero)
       new VectorBuilder[L, R, SparseVector[Res], Res] {
         def map(f: (Rep[L], Rep[R]) => Rep[Res]): Rep[SparseVector[Res]] = {
-          val builder: Rep[breeze.linalg.VectorBuilder[Res]] = newSparseVectorBuilder(lhs.length, lhs.length)
+          val lsize = lhs.activeSize
+          val rsize = rhs.activeSize
+          val builder: Rep[breeze.linalg.VectorBuilder[Res]] = newSparseVectorBuilder(lhs.length, (lsize + rsize).min(lhs.length))
           val ldata = lhs.data
           val rdata = rhs.data
           val lindex = lhs.index
           val rindex = rhs.index
+          var lpos = unit(0)
+          var rpos = unit(0)
+          while(lpos < lsize && rpos < rsize) {
+            val i = lindex(lpos)
+            while(rpos < rsize && rindex(rpos) < i) {
+              builder.add(rindex(rpos), f(lzero, rdata(rpos)))
+              rpos += 1
+            }
+            if(rpos < rsize && rindex(rpos) === i) {
+              builder.add(i, f(ldata(lpos), rdata(rpos)))
+              rpos += 1
+            } else {
+              builder.add(i, f(ldata(lpos), rzero))
+            }
+            lpos += 1
+          }
+          builder.toSparseVector(alreadySorted=unit(true), keysAlreadyUnique = unit(true))
+        }
+      }
+    }
+
+    def intersected(lhs: Rep[SparseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, SparseVector[Res], Res] = {
+      new VectorBuilder[L, R, SparseVector[Res], Res] {
+        def map(f: (Rep[L], Rep[R]) => Rep[Res]): Rep[SparseVector[Res]] = {
           val lsize = lhs.activeSize
           val rsize = rhs.activeSize
+          val builder: Rep[breeze.linalg.VectorBuilder[Res]] = newSparseVectorBuilder(lhs.length, lsize min rsize)
+          val ldata = lhs.data
+          val rdata = rhs.data
+          val lindex = lhs.index
+          val rindex = rhs.index
           var lpos = unit(0)
           var rpos = unit(0)
           while(lpos < lsize && rpos < rsize) {
@@ -75,11 +106,28 @@ trait SparseVectorBuilderOps extends OpGeneratorOps with SparseVectorOps with Bo
 
     def union(lhs: Rep[SparseVector[L]], rhs: Rep[R]): VectorBuilder[L, R, SparseVector[Res], Res] = fullRange(lhs, rhs)
 
-    def intersected(lhs: Rep[SparseVector[L]], rhs: Rep[R]): VectorBuilder[L, R, SparseVector[Res], Res] = fullRange(lhs, rhs)
+    def intersected(lhs: Rep[SparseVector[L]], rhs: Rep[R]): VectorBuilder[L, R, SparseVector[Res], Res] = {
+      new VectorBuilder[L, R, SparseVector[Res], Res] {
+        def map(f: (Rep[L], Rep[R]) => Rep[Res]): Rep[SparseVector[Res]] = {
+          val lsize = lhs.activeSize
+          val builder: Rep[breeze.linalg.VectorBuilder[Res]] = newSparseVectorBuilder(lhs.length, lsize)
+          val ldata = lhs.data
+          val lindex = lhs.index
+          var lpos = unit(0)
+          while(lpos < lsize) {
+            val i = lindex(lpos)
+            builder.add(i, f(ldata(lpos), rhs))
+            lpos += 1
+          }
+          builder.toSparseVector(alreadySorted=unit(true), keysAlreadyUnique = unit(true))
+        }
+      }
+
+    }
   }
 
 
-  def sparseVectorTransformer[L:Manifest:Semiring, R:Manifest] = new VectorTransformHelper[SparseVector[L], L, SparseVector[R], R] {
+  def sparseVectorTransformer[L:Manifest:Semiring, R:Manifest:Semiring] = new VectorTransformHelper[SparseVector[L], L, SparseVector[R], R] {
     val helper = sparseVectorHelper[L, R, L]
 
     def fullRange(lhs: Rep[SparseVector[L]], rhs: Rep[SparseVector[R]]): VectorUpdater[L, R] = {
@@ -122,9 +170,23 @@ trait SparseVectorBuilderOps extends OpGeneratorOps with SparseVectorOps with Bo
       }
     }
 
-    def union(lhs: Rep[SparseVector[L]], rhs: Rep[R]): VectorUpdater[L, R] = fullRange(lhs, rhs)
+    def union(lhs: Rep[SparseVector[L]], rhs: Rep[R]): VectorUpdater[L, R] = {
+      new VectorUpdater[L, R] {
+        def updateLHS(f: (Rep[L], Rep[R]) => Rep[L]) = {
+          val tmp = helper.union(lhs, rhs).map(f)
+          lhs.use(tmp.index, tmp.data, tmp.activeSize)
+        }
+      }
+    }
 
-    def intersected(lhs: Rep[SparseVector[L]], rhs: Rep[R]): VectorUpdater[L, R] = fullRange(lhs, rhs)
+    def intersected(lhs: Rep[SparseVector[L]], rhs: Rep[R]): VectorUpdater[L, R] = {
+      new VectorUpdater[L, R] {
+        def updateLHS(f: (Rep[L], Rep[R]) => Rep[L]) = {
+          val tmp = helper.union(lhs, rhs).map(f)
+          lhs.use(tmp.index, tmp.data, tmp.activeSize)
+        }
+      }
+    }
   }
 
 

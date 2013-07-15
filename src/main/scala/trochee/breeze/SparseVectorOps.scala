@@ -59,7 +59,7 @@ trait SparseVectorOpsExp extends SparseVectorOps { this : BaseExp with SimpleFie
   def enrichSV_index[T:Manifest](dv: Rep[SparseVector[T]])(implicit pos: SourceContext):Rep[Array[Int]] = reflectMutable(FieldDeref[SparseVector[T], Array[Int]](dv, "index")(implicitly, implicitly, pos))
   def enrichSV_length[T:Manifest](dv: Rep[SparseVector[T]])(implicit pos: SourceContext):Rep[Int] = FieldDeref[SparseVector[T], Int](dv, "length")(implicitly[Manifest[SparseVector[T]]], implicitly, pos)
   def enrichSV_activeSize[T:Manifest](dv: Rep[SparseVector[T]])(implicit pos: SourceContext):Rep[Int] = FieldDeref[SparseVector[T], Int](dv, "activeSize")(implicitly[Manifest[SparseVector[T]]], implicitly, pos)
-  def newSparseVectorBuilder[T:Manifest](length: Rep[Int], initialNonZero: Rep[Int] = unit(4))(implicit pos: SourceContext):Rep[VectorBuilder[T]] = NewObject[VectorBuilder[T]](length, initialNonZero)
+  def newSparseVectorBuilder[T:Manifest](length: Rep[Int], initialNonZero: Rep[Int] = unit(4))(implicit pos: SourceContext):Rep[VectorBuilder[T]] = NewObject[VectorBuilder[T]](length, initialNonZero)(implicitly, pos)
 
   def enrichSV_apply[T: Manifest](dv: Rep[SparseVector[T]], i: Rep[Int])(implicit pos: SourceContext): Rep[T] = MethodInvocation[SparseVector[T], T](dv, "apply", i)(implicitly, implicitly, pos)
 
