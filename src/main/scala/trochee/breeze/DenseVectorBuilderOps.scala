@@ -1,10 +1,8 @@
 package trochee.breeze
 
-import breeze.math.Semiring
 import breeze.linalg.DenseVector
 import scala.virtualization.lms.common._
-import trochee.basic.{ExtraBase, SimpleFieldsExp}
-import scala.reflect.SourceContext
+import trochee.basic._
 import breeze.math.Semiring
 import scala.virtualization.lms.internal.Effects
 
@@ -13,7 +11,7 @@ import scala.virtualization.lms.internal.Effects
  *
  * @author dlwh
  **/
-trait DenseVectorBuilderOps extends OpGeneratorOps with DenseVectorOps { this: Base with ExtraBase with NumericOps with OrderingOps with RangeOps with Variables with Effects with LiftVariables =>
+trait DenseVectorBuilderOps extends OpGeneratorOps with DenseVectorOps { this: Base with ExtraBase with NumericOps with OrderingOps with RangeOps with Variables with Effects with LiftVariables with ExtraNumericOps =>
 
   def denseVectorHelper[L:Manifest, R:Manifest, Res:Manifest:Semiring] = new VectorOpHelper[DenseVector[L], L, DenseVector[R], R, DenseVector[Res], Res] {
 

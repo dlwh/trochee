@@ -2,7 +2,7 @@ package trochee.breeze
 
 import breeze.linalg.SparseVector
 import scala.virtualization.lms.common._
-import trochee.basic.ExtraBase
+import trochee.basic.{ExtraNumericOps, ExtraBase}
 import breeze.math.Semiring
 import scala.virtualization.lms.internal.Effects
 
@@ -11,7 +11,7 @@ import scala.virtualization.lms.internal.Effects
  *
  * @author dlwh
  **/
-trait SparseVectorBuilderOps extends OpGeneratorOps with SparseVectorOps with BooleanOps { this: Base with ExtraBase with NumericOps with OrderingOps with RangeOps with Variables with Effects with LiftVariables with While with IfThenElse with PrimitiveOps =>
+trait SparseVectorBuilderOps extends OpGeneratorOps with SparseVectorOps with BooleanOps { this: Base with ExtraBase with NumericOps with OrderingOps with RangeOps with Variables with Effects with LiftVariables with While with IfThenElse with PrimitiveOps with ExtraNumericOps =>
 
   def sparseVectorHelper[L:Manifest:Semiring, R:Manifest:Semiring, Res:Manifest:Semiring] = new VectorOpHelper[SparseVector[L], L, SparseVector[R], R, SparseVector[Res], Res] {
 

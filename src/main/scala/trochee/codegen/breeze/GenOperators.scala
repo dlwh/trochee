@@ -1,6 +1,6 @@
 package trochee.codegen.breeze
 
-import trochee.basic.{ExtraBaseExp, ExtraBase}
+import trochee.basic._
 import scala.virtualization.lms.common._
 import scala.virtualization.lms.internal._
 import trochee.util.NiceNamesGen
@@ -9,7 +9,7 @@ import breeze.linalg._
 import breeze.linalg.operators._
 import trochee.breeze._
 import com.thoughtworks.paranamer.AdaptiveParanamer
-import trochee.codegen.ScalaSimpleFieldsGen
+import trochee.codegen._
 import java.util
 
 /**
@@ -127,9 +127,9 @@ abstract class GenOperators extends GenericCodegen with ScalaFatCodegen  with Ni
 
 object MakeOperators {
   def main(args: Array[String]) = {
-    val xIR = new BaseExp with ExtraBaseExp with DenseVectorBuilderOps with NumericOpsExp with OrderingOpsExp with RangeOpsExp with DenseVectorOpsExp with trochee.basic.SimpleFieldsExp with LiftVariables with SparseVectorBuilderOps with SparseVectorOpsExp with IfThenElseExp with WhileExp with PrimitiveOpsExp
-    val gen = new GenOperators with ScalaSimpleFieldsGen with ScalaGenRangeOps with ScalaGenNumericOps  with ScalaGenVariables with ScalaGenOrderingOps with ScalaGenWhile with ScalaGenBooleanOps with ScalaGenIfThenElse with ScalaGenPrimitiveOps {
-      val IR: xIR.type = xIR
+    val xIR = new BaseExp with ExtraBaseExp with DenseVectorBuilderOps with NumericOpsExp with OrderingOpsExp with RangeOpsExp with DenseVectorOpsExp with trochee.basic.SimpleFieldsExp with LiftVariables with SparseVectorBuilderOps with SparseVectorOpsExp with IfThenElseExp with WhileExp with PrimitiveOpsExp with ExtraNumericOpsExp
+    val gen = new GenOperators with ScalaSimpleFieldsGen with ScalaGenRangeOps with ScalaGenNumericOps  with ScalaGenVariables with ScalaGenOrderingOps with ScalaGenWhile with ScalaGenBooleanOps with ScalaGenIfThenElse with ScalaGenPrimitiveOps with ScalaExtraNumericGen {
+      val IR: xIR.type = xIR 
     }
     import xIR._
 

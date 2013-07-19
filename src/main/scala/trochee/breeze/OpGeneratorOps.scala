@@ -1,6 +1,6 @@
 package trochee.breeze
 
-import trochee.basic.ExtraBase
+import trochee.basic.{ExtraNumericOps, ExtraBase}
 import scala.virtualization.lms.common._
 import scala.virtualization.lms.internal._
 import breeze.linalg.DenseVector
@@ -15,7 +15,7 @@ import universe._
  *
  * @author dlwh
  **/
-trait OpGeneratorOps { this: Base with ExtraBase with NumericOps with OrderingOps =>
+trait OpGeneratorOps { this: Base with ExtraBase with NumericOps with OrderingOps with ExtraNumericOps =>
 
   case class Operator[LHS, RHS, Result](op: OpType,
                                         zeroIsNilpotent: Boolean = false,
@@ -93,13 +93,13 @@ trait OpGeneratorOps { this: Base with ExtraBase with NumericOps with OrderingOp
   }
 
   def orderingOps[T:Manifest:Ordering] = IndexedSeq(opLT, opLTE, opGT, opGTE, opEq, opNe)
-  def numericalOps[T:Manifest:Numeric] = IndexedSeq(opAdd, opSub, opMulScalar, opDiv)
+  def numericalOps[T:Manifest:Numeric] = IndexedSeq(opAdd, opSub, opMulScalar, opDiv, opMod)
 
   def opAdd[T:Manifest:Numeric] = Operator[T, T, T](OpAdd, zeroIsIdempotent = true)({_ + _})
   def opSub[T:Manifest:Numeric] = Operator[T, T, T](OpSub, rhsZeroIsIdempotent = true)({_ - _})
   def opMulScalar[T:Manifest:Numeric] = Operator[T, T, T](OpMulScalar, zeroIsNilpotent = true)({_ * _})
   def opDiv[T:Manifest:Numeric] = Operator[T, T, T](OpDiv, lhsZeroIsNilpotent = true)({_ / _})
-  //def opMod[T:Manifest:Numeric] = Operator[T, T, T]("OpMod", lhsZeroIsNilpotent = true)({_ % _})
+  def opMod[T:Manifest:Numeric] = Operator[T, T, T](OpMod, lhsZeroIsNilpotent = true)({_ % _})
 
   def opLT[T:Manifest:Ordering] = Operator[T, T, Boolean](OpLT)({_ < _})
   def opLTE[T:Manifest:Ordering] = Operator[T, T, Boolean](OpLTE)({_ <= _})
