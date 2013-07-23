@@ -18,6 +18,8 @@ trait ScalaExtraNumericGen extends ScalaFatCodegen with NiceNamesGen {
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
     case a@ExtraNumericMod(x,y) => emitValDef(addPos(sym, a), s"${quote(x)} % ${quote(y)}")
+    case a@ExtraNumericPow(x,y) if a.manifest == Manifest.Int => emitValDef(addPos(sym, a), s"breeze.numerics.IntMath.pow(${quote(x)}, ${quote(y)})")
+    case a@ExtraNumericPow(x,y) => emitValDef(addPos(sym, a), s"scala.math.pow(${quote(x)}, ${quote(y)})")
     case _ => super.emitNode(sym, rhs)
   }
 

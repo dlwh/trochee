@@ -15,7 +15,7 @@ import universe._
  *
  * @author dlwh
  **/
-trait OpGeneratorOps { this: Base with ExtraBase with NumericOps with OrderingOps with ExtraNumericOps =>
+trait OpGeneratorOps { this: Base with ExtraBase with NumericOps with OrderingOps with ExtraNumericOps with BooleanOps =>
 
   case class Operator[LHS, RHS, Result](op: OpType,
                                         zeroIsNilpotent: Boolean = false,
@@ -92,21 +92,29 @@ trait OpGeneratorOps { this: Base with ExtraBase with NumericOps with OrderingOp
     VectorBinaryUpdateOperator(typeOf[LHS], op.op, typeOf[RHS])(body)
   }
 
-  def orderingOps[T:Manifest:Ordering] = IndexedSeq(opLT, opLTE, opGT, opGTE, opEq, opNe)
-  def numericalOps[T:Manifest:Numeric] = IndexedSeq(opAdd, opSub, opMulScalar, opDiv, opMod)
+  def eqOps[T:Manifest] = IndexedSeq(opEq, opNe)
+  def orderingOps[T:Manifest:Ordering] = IndexedSeq(opLT, opLTE, opGT, opGTE)
+  def numericalOps[T:Manifest:Numeric] = IndexedSeq(opAdd, opSub, opMulScalar, opDiv, opMod, opPow)
+  def booleanOps = IndexedSeq(opAnd, opOr, opXor)
 
   def opAdd[T:Manifest:Numeric] = Operator[T, T, T](OpAdd, zeroIsIdempotent = true)({_ + _})
   def opSub[T:Manifest:Numeric] = Operator[T, T, T](OpSub, rhsZeroIsIdempotent = true)({_ - _})
   def opMulScalar[T:Manifest:Numeric] = Operator[T, T, T](OpMulScalar, zeroIsNilpotent = true)({_ * _})
   def opDiv[T:Manifest:Numeric] = Operator[T, T, T](OpDiv, lhsZeroIsNilpotent = true)({_ / _})
   def opMod[T:Manifest:Numeric] = Operator[T, T, T](OpMod, lhsZeroIsNilpotent = true)({_ % _})
+  def opPow[T:Manifest:Numeric] = Operator[T, T, T](OpPow, lhsZeroIsNilpotent = true)({_ ** _})
 
   def opLT[T:Manifest:Ordering] = Operator[T, T, Boolean](OpLT)({_ < _})
   def opLTE[T:Manifest:Ordering] = Operator[T, T, Boolean](OpLTE)({_ <= _})
   def opGT[T:Manifest:Ordering] = Operator[T, T, Boolean](OpGT)({_ > _})
   def opGTE[T:Manifest:Ordering] = Operator[T, T, Boolean](OpGTE)({_ >= _})
-  def opEq[T:Manifest:Ordering] = Operator[T, T, Boolean](OpEq)({_ === _})
-  def opNe[T:Manifest:Ordering] = Operator[T, T, Boolean](OpNe)({_ !== _})
+  def opEq[T:Manifest] = Operator[T, T, Boolean](OpEq)({_ === _})
+  def opNe[T:Manifest] = Operator[T, T, Boolean](OpNe)({_ !== _})
+
+  def opAnd = Operator[Boolean, Boolean, Boolean](OpAnd, zeroIsNilpotent = true)(_ && _)
+  def opOr = Operator[Boolean, Boolean, Boolean](OpOr, zeroIsIdempotent = true)(_ || _)
+  def opXor = Operator[Boolean, Boolean, Boolean](OpXor, zeroIsIdempotent = true)(_ ^ _)
+
 
   protected def mkAbbreviation[T](implicit tag: Type):String = {
     tag match {
