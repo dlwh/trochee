@@ -104,6 +104,8 @@ trait OpGeneratorOps { this: Base with ExtraBase with NumericOps with OrderingOp
   def opMod[T:Manifest:Numeric] = Operator[T, T, T](OpMod, lhsZeroIsNilpotent = true)({_ % _})
   def opPow[T:Manifest:Numeric] = Operator[T, T, T](OpPow, lhsZeroIsNilpotent = true)({_ ** _})
 
+  def opMulInner[T:Manifest:Numeric] = Operator[T, T, T](OpMulInner, zeroIsNilpotent = true)({_ * _})
+
   def opLT[T:Manifest:Ordering] = Operator[T, T, Boolean](OpLT)({_ < _})
   def opLTE[T:Manifest:Ordering] = Operator[T, T, Boolean](OpLTE)({_ <= _})
   def opGT[T:Manifest:Ordering] = Operator[T, T, Boolean](OpGT)({_ > _})

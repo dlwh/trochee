@@ -11,6 +11,7 @@ import trochee.breeze._
 import com.thoughtworks.paranamer.AdaptiveParanamer
 import trochee.codegen._
 import java.util
+import trochee.basic.collection._
 
 /**
  * TODO
@@ -21,7 +22,6 @@ abstract class GenOperators extends GenericCodegen with ScalaFatCodegen  with Ni
   val IR: BaseExp with ExtraBaseExp with scala.virtualization.lms.internal.Expressions with scala.virtualization.lms.internal.Effects with scala.virtualization.lms.internal.FatExpressions with OpGeneratorOps with DenseVectorBuilderOps
 
   import IR._
-
 
 
   private val namedSyms = new util.IdentityHashMap[Sym[_], String]()
@@ -127,8 +127,8 @@ abstract class GenOperators extends GenericCodegen with ScalaFatCodegen  with Ni
 
 object MakeOperators {
   def main(args: Array[String]) = {
-    val xIR = new BaseExp with ExtraBaseExp with DenseVectorBuilderOps with NumericOpsExp with OrderingOpsExp with RangeOpsExp with DenseVectorOpsExp with trochee.basic.SimpleFieldsExp with LiftVariables with SparseVectorBuilderOps with SparseVectorOpsExp with IfThenElseExp with WhileExp with PrimitiveOpsExp with ExtraNumericOpsExp
-    val gen = new GenOperators with ScalaSimpleFieldsGen with ScalaGenRangeOps with ScalaGenNumericOps  with ScalaGenVariables with ScalaGenOrderingOps with ScalaGenWhile with ScalaGenBooleanOps with ScalaGenIfThenElse with ScalaGenPrimitiveOps with ScalaExtraNumericGen {
+    val xIR = new BaseExp with ExtraBaseExp with DenseVectorBuilderOps with NumericOpsExp with OrderingOpsExp with RangeOpsExp with DenseVectorOpsExp with trochee.basic.SimpleFieldsExp with LiftVariables with SparseVectorBuilderOps with SparseVectorOpsExp with HashVectorBuilderOps with HashVectorOpsExp with IfThenElseExp with WhileExp with PrimitiveOpsExp with ExtraNumericOpsExp with BitSetOpsExp
+    val gen = new GenOperators with ScalaSimpleFieldsGen with ScalaGenRangeOps with ScalaGenNumericOps  with ScalaGenVariables with ScalaGenOrderingOps with ScalaGenWhile with ScalaGenBooleanOps with ScalaGenIfThenElse with ScalaGenPrimitiveOps with ScalaExtraNumericGen with ScalaBitSetGen {
       val IR: xIR.type = xIR 
     }
     import xIR._
@@ -139,6 +139,10 @@ object MakeOperators {
       println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(denseVectorTransformer[Double, Double], x)))
       println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(denseVectorScalarTransformer[Double, Double], x)))
     }
+
+
+    println(gen.genBinaryOp(vectorBinaryOp(denseVectorDotProductHelper[Double, Double, Double], opMulInner[Double])))
+    println(gen.genBinaryOp(vectorBinaryOp(sparseVectorDotProductHelper[Double, Double, Double], opMulInner[Double])))
 
     for(x <- orderingOps[Double]) {
       println(gen.genBinaryOp(vectorBinaryOp(denseVectorHelper[Double, Double, Boolean], x)))
@@ -158,6 +162,22 @@ object MakeOperators {
       println(gen.genBinaryOp(vectorBinaryOp(sparseVectorHelper[Double, Double, Boolean], x)))
       println(gen.genBinaryOp(vectorBinaryOp(sparseVectorScalarHelper[Double, Double, Boolean], x)))
     }
+
+    println("Hash")
+
+    for(x <- numericalOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(hashVectorHelper[Double, Double, Double], x)))
+      println(gen.genBinaryOp(vectorBinaryOp(hashVectorScalarHelper[Double, Double, Double], x)))
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(hashVectorTransformer[Double, Double], x)))
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(hashVectorScalarTransformer[Double, Double], x)))
+    }
+
+    for(x <- orderingOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(hashVectorHelper[Double, Double, Boolean], x)))
+      println(gen.genBinaryOp(vectorBinaryOp(hashVectorScalarHelper[Double, Double, Boolean], x)))
+    }
+
+    println(gen.genBinaryOp(vectorBinaryOp(hashVectorDotProductHelper[Double, Double, Double], opMulInner[Double])))
 
   }
 

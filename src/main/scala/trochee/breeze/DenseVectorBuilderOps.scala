@@ -66,6 +66,33 @@ trait DenseVectorBuilderOps extends OpGeneratorOps with DenseVectorOps { this: B
   }
 
 
+
+ def denseVectorDotProductHelper[L:Manifest, R:Manifest, Res:Manifest:Semiring:Numeric] = new VectorOpHelper[DenseVector[L], L, DenseVector[R], R, Res, Res] {
+    def fullRange(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorBuilder[L, R, Res, Res] = {
+      new VectorBuilder[L, R, Res, Res] {
+        def map(f: (Rep[L], Rep[R]) => Rep[Res]): Rep[Res] = {
+          var res = unit(implicitly[Semiring[Res]].zero)
+          val ldata = lhs.data
+          val rdata = rhs.data
+          var loff = lhs.offset
+          var roff = rhs.offset
+          val lstride = lhs.stride
+          val rstride = rhs.stride
+          for(i <- unit(0) until lhs.length) {
+            res = res + f(ldata(loff), rdata(roff))
+            loff = loff + lstride
+            roff = roff + rstride
+          }
+          res
+        }
+      }
+    }
+
+    def union(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorBuilder[L, R, Res, Res] = fullRange(lhs, rhs)
+
+    def intersected(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorBuilder[L, R, Res, Res] = fullRange(lhs, rhs)
+  }
+
   def denseVectorTransformer[L:Manifest, R:Manifest] = new VectorTransformHelper[DenseVector[L], L, DenseVector[R], R] {
 
     def fullRange(lhs: Rep[DenseVector[L]], rhs: Rep[DenseVector[R]]): VectorUpdater[L, R] = {

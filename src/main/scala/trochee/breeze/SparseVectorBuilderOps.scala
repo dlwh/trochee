@@ -126,6 +126,43 @@ trait SparseVectorBuilderOps extends OpGeneratorOps with SparseVectorOps with Bo
     }
   }
 
+  def sparseVectorDotProductHelper[L:Manifest:Semiring, R:Manifest:Semiring, Res:Numeric:Manifest:Semiring] = new VectorOpHelper[SparseVector[L], L, SparseVector[R], R, Res, Res] {
+
+    def fullRange(lhs: Rep[SparseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, Res, Res] = ???
+
+    def union(lhs: Rep[SparseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, Res, Res] = ???
+
+    def intersected(lhs: Rep[SparseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, Res, Res] = {
+      new VectorBuilder[L, R, Res, Res] {
+        def map(f: (Rep[L], Rep[R]) => Rep[Res]): Rep[Res] = {
+          val lsize = lhs.activeSize
+          val rsize = rhs.activeSize
+          var res = unit(implicitly[Semiring[Res]].zero)
+          val ldata = lhs.data
+          val rdata = rhs.data
+          val lindex = lhs.index
+          val rindex = rhs.index
+          var lpos = unit(0)
+          var rpos = unit(0)
+          while(lpos < lsize && rpos < rsize) {
+            val i = lindex(lpos)
+            val newrpos = Arrays.binarySearch(rindex, rpos, rsize, i)
+            if(newrpos < unit(0)) {
+              rpos = ~newrpos
+            } else {
+              res = res + f(ldata(lpos), rdata(rpos))
+              rpos = newrpos
+            }
+            lpos += 1
+          }
+          res
+        }
+      }
+    }
+
+  }
+
+
 
   def sparseVectorTransformer[L:Manifest:Semiring, R:Manifest:Semiring] = new VectorTransformHelper[SparseVector[L], L, SparseVector[R], R] {
     val helper = sparseVectorHelper[L, R, L]
