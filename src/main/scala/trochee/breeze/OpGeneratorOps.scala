@@ -15,7 +15,7 @@ import universe._
  *
  * @author dlwh
  **/
-trait OpGeneratorOps { this: Base with ExtraBase with NumericOps with OrderingOps with ExtraNumericOps with BooleanOps =>
+trait OpGeneratorOps extends NumericOps with OrderingOps with ExtraNumericOps with BooleanOps { this: Base with ExtraBase =>
 
   case class Operator[LHS, RHS, Result](op: OpType,
                                         zeroIsNilpotent: Boolean = false,

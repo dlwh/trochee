@@ -15,6 +15,8 @@ import scala.virtualization.lms.internal.Effects
 trait DenseVectorOps { this : Base =>
 
   implicit class enrichDV[T:Manifest](vv: Rep[DenseVector[T]]) {
+    def apply(i: Rep[Int])(implicit pos: SourceContext):Rep[T] = enrichDV_apply(vv, i)(implicitly, pos)
+    def update(i: Rep[Int], v: Rep[T])(implicit pos: SourceContext):Rep[Unit] = enrichDV_update(vv, i, v)(implicitly, pos)
     def data(implicit pos: SourceContext):Rep[Array[T]] = enrichDV_data(vv)(implicitly, pos)
     def length(implicit pos: SourceContext):Rep[Int] = enrichDV_length(vv)(implicitly, pos)
     def stride(implicit pos: SourceContext):Rep[Int] = enrichDV_stride(vv)(implicitly, pos)
@@ -22,6 +24,8 @@ trait DenseVectorOps { this : Base =>
 
   }
 
+  def enrichDV_apply[T:Manifest](dv: Rep[DenseVector[T]], i: Rep[Int])(implicit pos: SourceContext):Rep[T]
+  def enrichDV_update[T:Manifest](dv: Rep[DenseVector[T]], i: Rep[Int], v: Rep[T])(implicit pos: SourceContext):Rep[Unit]
   def enrichDV_data[T:Manifest](dv: Rep[DenseVector[T]])(implicit pos: SourceContext):Rep[Array[T]]
   def enrichDV_length[T:Manifest](dv: Rep[DenseVector[T]])(implicit pos: SourceContext):Rep[Int]
   def enrichDV_stride[T:Manifest](dv: Rep[DenseVector[T]])(implicit pos: SourceContext):Rep[Int]
@@ -41,6 +45,8 @@ trait DenseVectorOps { this : Base =>
  * @author dlwh
  **/
 trait DenseVectorOpsExp extends DenseVectorOps { this : BaseExp with SimpleFieldsExp with Effects =>
+  def enrichDV_update[T:Manifest](dv: Rep[DenseVector[T]], i: Rep[Int], v: Rep[T])(implicit pos: SourceContext):Rep[Unit] = reflectEffect(MethodInvocation[DenseVector[T], Unit](dv, "update", i, v))
+  def enrichDV_apply[T:Manifest](dv: Rep[DenseVector[T]], i: Rep[Int])(implicit pos: SourceContext):Rep[T] = MethodInvocation[DenseVector[T], T](dv, "apply", i)
   def enrichDV_data[T:Manifest](dv: Rep[DenseVector[T]])(implicit pos: SourceContext):Rep[Array[T]] = reflectMutable(FieldDeref[DenseVector[T], Array[T]](dv, "data")(implicitly, implicitly, pos))
   def enrichDV_length[T:Manifest](dv: Rep[DenseVector[T]])(implicit pos: SourceContext):Rep[Int] = FieldDeref[DenseVector[T], Int](dv, "length")(implicitly[Manifest[DenseVector[T]]], implicitly, pos)
   def enrichDV_stride[T:Manifest](dv: Rep[DenseVector[T]])(implicit pos: SourceContext):Rep[Int] = FieldDeref[DenseVector[T], Int](dv, "stride")(implicitly[Manifest[DenseVector[T]]], implicitly, pos)
