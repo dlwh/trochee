@@ -1,6 +1,6 @@
 package trochee.breeze
 
-import scala.virtualization.lms.common.{While, IfThenElse, OrderingOps, Base}
+import scala.virtualization.lms.common._
 import breeze.math.Semiring
 import breeze.linalg.{SparseVector, DenseVector}
 import trochee.basic.ExtraBase
@@ -10,7 +10,7 @@ import trochee.basic.ExtraBase
  *
  * @author dlwh
  **/
-trait DVSVBuilderOps extends OpGeneratorOps with DenseVectorOps with SparseVectorOps { this: ExtraBase with While =>
+trait DVSVBuilderOps extends OpGeneratorOps with DenseVectorOps with SparseVectorOps with RangeOps { this: ExtraBase with While =>
 
   def dv_sv_dv_helper[L: Manifest, R: Manifest, Res: Manifest:Semiring] =  new VectorOpHelper[DenseVector[L], L, SparseVector[R], R, DenseVector[Res], Res] {
     def intersected(lhs: Rep[DenseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, DenseVector[Res], Res] = {
@@ -22,18 +22,14 @@ trait DVSVBuilderOps extends OpGeneratorOps with DenseVectorOps with SparseVecto
       def map(f: (Rep[L], Rep[R]) => Rep[Res]): Rep[DenseVector[Res]] = {
         val res = newDenseVector[Res](lhs.length)
         val resdata = res.data
-        val rdata = rhs.data
-        val rindex = rhs.index
-        val rsize = rhs.activeSize
-        var rpos = unit(0)
-        while(rpos < rsize) {
-          val i = rindex(rpos)
-          resdata(i) = f(lhs(i), rdata(rpos))
-          rpos += 1
+        for (i <- unit(0) until res.length) {
+          resdata(i) = f(lhs(i), rhs(i))
         }
 
         res
       }
+
+      def zero: Rep[Int] = unit(0)
     }
 
     def union(lhs: Rep[DenseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, DenseVector[Res], Res] = fullRange(lhs, rhs)
@@ -48,11 +44,9 @@ trait DVSVBuilderOps extends OpGeneratorOps with DenseVectorOps with SparseVecto
           val builder: Rep[breeze.linalg.VectorBuilder[Res]] = newSparseVectorBuilder(lhs.length, rsize)
           val rdata = rhs.data
           val rindex = rhs.index
-          var rpos = unit(0)
-          while(rpos < rsize) {
+          for (rpos <- unit(0) until rsize) {
             val i = rindex(rpos)
             builder.add(i, f(lhs(i), rdata(rpos)))
-            rpos += 1
           }
           builder.toSparseVector(alreadySorted=unit(true), keysAlreadyUnique = unit(true))
         }
@@ -68,6 +62,33 @@ trait DVSVBuilderOps extends OpGeneratorOps with DenseVectorOps with SparseVecto
 
     def union(lhs: Rep[DenseVector[L]], rhs: Rep[SparseVector[R]]): VectorBuilder[L, R, SparseVector[Res], Res] = {
       throw new UnsupportedOperationException("Use DV_SV_DV for union-type operations")
+    }
+  }
+
+
+  def dv_sv_transformer[L: Manifest, R: Manifest] =  new VectorTransformHelper[DenseVector[L], L, SparseVector[R], R] {
+    def intersected(lhs: Rep[DenseVector[L]], rhs: Rep[SparseVector[R]]): VectorUpdater[L, R] = new VectorUpdater[L, R] {
+      def updateLHS(f: (Rep[L], Rep[R]) => Rep[L]): Rep[Unit] = {
+        val rsize = rhs.activeSize
+        val rdata = rhs.data
+        val rindex = rhs.index
+        for (rpos <- unit(0) until rsize) {
+          val i = rindex(rpos)
+          lhs(i) = f(lhs(i), rdata(rpos))
+        }
+      }
+    }
+
+    def union(lhs: Rep[DenseVector[L]], rhs: Rep[SparseVector[R]]): VectorUpdater[L, R] = fullRange(lhs, rhs)
+
+    def fullRange(lhs: Rep[DenseVector[L]], rhs: Rep[SparseVector[R]]): VectorUpdater[L, R] = {
+      new VectorUpdater[L, R] {
+        def updateLHS(f: (Rep[L], Rep[R]) => Rep[L]): Rep[Unit] = {
+          for (i <- unit(0) until lhs.length) {
+            lhs(i) = f(lhs(i), rhs(i))
+          }
+        }
+      }
     }
   }
 }

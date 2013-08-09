@@ -10,6 +10,7 @@ import scala.reflect.runtime._
 import universe._
 
 
+
 /**
  * TODO
  *
@@ -22,8 +23,11 @@ trait OpGeneratorOps extends NumericOps with OrderingOps with ExtraNumericOps wi
                                         zeroIsIdempotent: Boolean = false,
                                         rhsZeroIsIdempotent: Boolean = false,
                                         lhsZeroIsNilpotent: Boolean = true)
-                                       (val fn: (Rep[LHS],Rep[RHS])=>Rep[Result]) {
+                                       (val fn: (Rep[LHS],Rep[RHS])=>Rep[Result]) extends ((Rep[LHS],Rep[RHS])=>Rep[Result]) {
     def apply(lhs: Rep[LHS], rhs: Rep[RHS]):Rep[Result] = fn(lhs, rhs)
+
+    def preferIntersected = zeroIsNilpotent
+    def preferUnion = zeroIsIdempotent
   }
 
   trait VectorOpHelper[LHS, LHSV,
@@ -65,8 +69,8 @@ trait OpGeneratorOps extends NumericOps with OrderingOps with ExtraNumericOps wi
 
     val body = { (lhs: Rep[LHS], rhs: Rep[RHS]) =>
       val zipped = {
-        if(op.zeroIsNilpotent) helper.intersected(lhs, rhs)
-        else if(op.zeroIsIdempotent) helper.union(lhs, rhs)
+        if(op.preferIntersected) helper.intersected(lhs, rhs)
+        else if(op.preferUnion) helper.union(lhs, rhs)
         else helper.fullRange(lhs, rhs)
       }
       zipped map {op(_, _)}
@@ -103,6 +107,8 @@ trait OpGeneratorOps extends NumericOps with OrderingOps with ExtraNumericOps wi
   def opDiv[T:Manifest:Numeric] = Operator[T, T, T](OpDiv, lhsZeroIsNilpotent = true)({_ / _})
   def opMod[T:Manifest:Numeric] = Operator[T, T, T](OpMod, lhsZeroIsNilpotent = true)({_ % _})
   def opPow[T:Manifest:Numeric] = Operator[T, T, T](OpPow, lhsZeroIsNilpotent = true)({_ ** _})
+
+  def opSet[T:Manifest:Numeric] = Operator[T, T, T](OpSet)({(a,b) => b})
 
   def opMulInner[T:Manifest:Numeric] = Operator[T, T, T](OpMulInner, zeroIsNilpotent = true)({_ * _})
 

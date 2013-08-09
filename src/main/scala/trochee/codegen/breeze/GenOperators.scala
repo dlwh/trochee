@@ -33,9 +33,9 @@ abstract class GenOperators extends GenericCodegen with ScalaFatCodegen  with Ni
 
   private val paranamer = new AdaptiveParanamer()
 
-  override def quote(x: Exp[Any]): String = x match {
-    case y: Sym[_] => nameForSym(y).getOrElse(super.quote(x))
-    case _ => super.quote(x)
+  override def quote(op: Exp[Any]): String = op match {
+    case y: Sym[_] => nameForSym(y).getOrElse(super.quote(op))
+    case _ => super.quote(op)
   }
 
   def genBinaryOp[LHS: Manifest, RHS: Manifest, Result: Manifest](op: VectorBinaryOperator[LHS, RHS, Result]) = {
@@ -127,57 +127,71 @@ abstract class GenOperators extends GenericCodegen with ScalaFatCodegen  with Ni
 
 object MakeOperators {
   def main(args: Array[String]) = {
-    val xIR = new BaseExp with ExtraBaseExp with DenseVectorBuilderOps with NumericOpsExp with OrderingOpsExp with RangeOpsExp with DenseVectorOpsExp with trochee.basic.SimpleFieldsExp with LiftVariables with SparseVectorBuilderOps with SparseVectorOpsExp with HashVectorBuilderOps with HashVectorOpsExp with IfThenElseExp with WhileExp with PrimitiveOpsExp with ExtraNumericOpsExp with BitSetOpsExp
+    val xIR = new BaseExp with ExtraBaseExp with DenseVectorBuilderOps with NumericOpsExp with OrderingOpsExp with RangeOpsExp with DenseVectorOpsExp with trochee.basic.SimpleFieldsExp with LiftVariables with SparseVectorBuilderOps with SparseVectorOpsExp with HashVectorBuilderOps with HashVectorOpsExp with IfThenElseExp with WhileExp with PrimitiveOpsExp with ExtraNumericOpsExp with BitSetOpsExp with DVSVBuilderOps
     val gen = new GenOperators with ScalaSimpleFieldsGen with ScalaGenRangeOps with ScalaGenNumericOps  with ScalaGenVariables with ScalaGenOrderingOps with ScalaGenWhile with ScalaGenBooleanOps with ScalaGenIfThenElse with ScalaGenPrimitiveOps with ScalaExtraNumericGen with ScalaBitSetGen {
       val IR: xIR.type = xIR 
     }
     import xIR._
 
-    for(x <- numericalOps[Double]) {
-      println(gen.genBinaryOp(vectorBinaryOp(denseVectorHelper[Double, Double, Double], x)))
-      println(gen.genBinaryOp(vectorBinaryOp(denseVectorScalarHelper[Double, Double, Double], x)))
-      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(denseVectorTransformer[Double, Double], x)))
-      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(denseVectorScalarTransformer[Double, Double], x)))
+    for(op <- numericalOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(denseVectorHelper[Double, Double, Double], op)))
+      println(gen.genBinaryOp(vectorBinaryOp(denseVectorScalarHelper[Double, Double, Double], op)))
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(denseVectorTransformer[Double, Double], op)))
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(denseVectorScalarTransformer[Double, Double], op)))
     }
 
 
     println(gen.genBinaryOp(vectorBinaryOp(denseVectorDotProductHelper[Double, Double, Double], opMulInner[Double])))
     println(gen.genBinaryOp(vectorBinaryOp(sparseVectorDotProductHelper[Double, Double, Double], opMulInner[Double])))
 
-    for(x <- orderingOps[Double]) {
-      println(gen.genBinaryOp(vectorBinaryOp(denseVectorHelper[Double, Double, Boolean], x)))
-      println(gen.genBinaryOp(vectorBinaryOp(denseVectorScalarHelper[Double, Double, Boolean], x)))
+    for(op <- orderingOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(denseVectorHelper[Double, Double, Boolean], op)))
+      println(gen.genBinaryOp(vectorBinaryOp(denseVectorScalarHelper[Double, Double, Boolean], op)))
     }
 
     println("Sparse")
 
-    for(x <- numericalOps[Double]) {
-      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorHelper[Double, Double, Double], x)))
-      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorScalarHelper[Double, Double, Double], x)))
-      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(sparseVectorTransformer[Double, Double], x)))
-      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(sparseVectorScalarTransformer[Double, Double], x)))
+    for(op <- numericalOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorHelper[Double, Double, Double], op)))
+      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorScalarHelper[Double, Double, Double], op)))
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(sparseVectorTransformer[Double, Double], op)))
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(sparseVectorScalarTransformer[Double, Double], op)))
     }
 
-    for(x <- orderingOps[Double]) {
-      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorHelper[Double, Double, Boolean], x)))
-      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorScalarHelper[Double, Double, Boolean], x)))
+    for(op <- orderingOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorHelper[Double, Double, Boolean], op)))
+      println(gen.genBinaryOp(vectorBinaryOp(sparseVectorScalarHelper[Double, Double, Boolean], op)))
     }
 
     println("Hash")
 
-    for(x <- numericalOps[Double]) {
-      println(gen.genBinaryOp(vectorBinaryOp(hashVectorHelper[Double, Double, Double], x)))
-      println(gen.genBinaryOp(vectorBinaryOp(hashVectorScalarHelper[Double, Double, Double], x)))
-      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(hashVectorTransformer[Double, Double], x)))
-      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(hashVectorScalarTransformer[Double, Double], x)))
+    for(op <- numericalOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(hashVectorHelper[Double, Double, Double], op)))
+      println(gen.genBinaryOp(vectorBinaryOp(hashVectorScalarHelper[Double, Double, Double], op)))
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(hashVectorTransformer[Double, Double], op)))
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(hashVectorScalarTransformer[Double, Double], op)))
     }
 
-    for(x <- orderingOps[Double]) {
-      println(gen.genBinaryOp(vectorBinaryOp(hashVectorHelper[Double, Double, Boolean], x)))
-      println(gen.genBinaryOp(vectorBinaryOp(hashVectorScalarHelper[Double, Double, Boolean], x)))
+    for(op <- orderingOps[Double]) {
+      println(gen.genBinaryOp(vectorBinaryOp(hashVectorHelper[Double, Double, Boolean], op)))
+      println(gen.genBinaryOp(vectorBinaryOp(hashVectorScalarHelper[Double, Double, Boolean], op)))
     }
 
     println(gen.genBinaryOp(vectorBinaryOp(hashVectorDotProductHelper[Double, Double, Double], opMulInner[Double])))
+
+    println("DV/SV")
+
+    
+    for(op <- numericalOps[Double]) {
+      if (op.preferIntersected) {
+        val helper = dv_sv_sv_helper[Double, Double, Double]
+        println(gen.genBinaryOp(vectorBinaryOp(helper, op)))
+      } else {
+        val helper = dv_sv_dv_helper[Double, Double, Double]
+        println(gen.genBinaryOp(vectorBinaryOp(helper, op)))
+      }
+      println(gen.genBinaryUpdateOp(vectorBinaryUpdateOp(dv_sv_transformer[Double, Double], op)))
+    }
 
   }
 
