@@ -22,7 +22,8 @@ trait OpGeneratorOps extends NumericOps with OrderingOps with ExtraNumericOps wi
                                         zeroIsNilpotent: Boolean = false,
                                         zeroIsIdempotent: Boolean = false,
                                         rhsZeroIsIdempotent: Boolean = false,
-                                        lhsZeroIsNilpotent: Boolean = true)
+                                        rhsZeroIsNilPotent: Boolean = false,
+                                        lhsZeroIsNilpotent: Boolean = false)
                                        (val fn: (Rep[LHS],Rep[RHS])=>Rep[Result]) extends ((Rep[LHS],Rep[RHS])=>Rep[Result]) {
     def apply(lhs: Rep[LHS], rhs: Rep[RHS]):Rep[Result] = fn(lhs, rhs)
 
@@ -108,7 +109,7 @@ trait OpGeneratorOps extends NumericOps with OrderingOps with ExtraNumericOps wi
   def opMod[T:Manifest:Numeric] = Operator[T, T, T](OpMod, lhsZeroIsNilpotent = true)({_ % _})
   def opPow[T:Manifest:Numeric] = Operator[T, T, T](OpPow, lhsZeroIsNilpotent = true)({_ ** _})
 
-  def opSet[T:Manifest:Numeric] = Operator[T, T, T](OpSet)({(a,b) => b})
+  def opSet[T:Manifest:Numeric] = Operator[T, T, T](OpSet, rhsZeroIsNilpotent = true)({(a,b) => b})
 
   def opMulInner[T:Manifest:Numeric] = Operator[T, T, T](OpMulInner, zeroIsNilpotent = true)({_ * _})
 
